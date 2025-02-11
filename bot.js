@@ -2,6 +2,7 @@ const { Telegraf, Markup } = require("telegraf");
 const axios = require("axios");
 
 const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI");
+const coinMarketCapAPIKey = "6417c9d2-9dff-4637-8487-08ef598f23c6";
 
 bot.start((ctx) => {
   ctx.reply(
@@ -29,14 +30,32 @@ bot.hears("💰 قیمت بیت کوین", async (ctx) => {
   }
 });
 
-// دریافت قیمت ناتکوین از API CoinGecko (یا هر API دیگه)
+// دریافت قیمت ناتکوین از CoinMarketCap
 bot.hears("💰 قیمت ناتکوین", async (ctx) => {
   try {
     const response = await axios.get(
-      "https://api.coingecko.com/api/v3/simple/price?ids=natcoin&vs_currencies=usd"
+      "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": coinMarketCapAPIKey,
+        },
+        params: {
+          start: 1,
+          limit: 10,
+          convert: "USD",
+        },
+      }
     );
-    const price = response.data["natcoin"].usd;
-    ctx.reply(`💸 قیمت ناتکوین امروز: $${price} دلار`);
+
+    const natcoin = response.data.data.find(
+      (coin) => coin.name.toLowerCase() === "natcoin"
+    );
+    if (natcoin) {
+      const price = natcoin.quote.USD.price;
+      ctx.reply(`💸 قیمت ناتکوین امروز: $${price} دلار`);
+    } else {
+      ctx.reply("❌ قیمت ناتکوین پیدا نشد.");
+    }
   } catch (error) {
     ctx.reply(
       "❌ مشکلی در دریافت قیمت ناتکوین پیش آمد، لطفاً بعداً امتحان کنید."
