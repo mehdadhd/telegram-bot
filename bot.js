@@ -1,10 +1,10 @@
 const { Telegraf, Markup } = require("telegraf");
 const axios = require("axios");
 
-const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // توکن ربات خودت را وارد کن
+const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // توکن ربات خود را وارد کنید
 const channelUsername = "@ztuwzu5eykfri5w4y"; // یوزرنیم کانال موردنظر
 
-// بررسی عضویت هنگام /start
+// بررسی عضویت در کانال هنگام /start
 bot.start(async (ctx) => {
   const userId = ctx.from.id;
 
@@ -84,14 +84,18 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", (ctx) => {
   );
 });
 
-// توابع دریافت قیمت از API CoinGecko
+// توابع دریافت قیمت از API CoinGecko برای همه ارزها
 async function getCryptoPrice(ctx, coinId, coinName) {
   try {
     const response = await axios.get(
       `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`
     );
-    const price = response.data[coinId].usd;
-    ctx.reply(`💰 قیمت لحظه‌ای **${coinName}**: ${price} دلار`);
+    if (response.data[coinId] && response.data[coinId].usd) {
+      const price = response.data[coinId].usd;
+      ctx.reply(`💰 قیمت لحظه‌ای **${coinName}**: ${price} دلار`);
+    } else {
+      ctx.reply(`❌ قیمت **${coinName}** در حال حاضر در دسترس نیست.`);
+    }
   } catch (error) {
     console.error(`خطا در دریافت قیمت ${coinName}:`, error);
     ctx.reply(
@@ -100,11 +104,9 @@ async function getCryptoPrice(ctx, coinId, coinName) {
   }
 }
 
-// دکمه‌های قیمت ارزها
+// دکمه‌های قیمت ارزها با API صحیح
 bot.action("btc_price", (ctx) => getCryptoPrice(ctx, "bitcoin", "بیت کوین"));
-bot.action("near_price", (ctx) =>
-  getCryptoPrice(ctx, "near", "ناتکوین (Near Protocol)")
-);
+bot.action("near_price", (ctx) => getCryptoPrice(ctx, "near", "ناتکوین"));
 bot.action("eth_price", (ctx) => getCryptoPrice(ctx, "ethereum", "اتریوم"));
 bot.action("ton_price", (ctx) =>
   getCryptoPrice(ctx, "the-open-network", "تون کوین")
