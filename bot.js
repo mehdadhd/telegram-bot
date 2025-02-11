@@ -2,7 +2,8 @@ const { Telegraf, Markup } = require("telegraf");
 const axios = require("axios");
 
 const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI");
-const footballAPIKey = "d9cf7b88a1c1b4940d97b52a28688702"; // API Key خودتون رو اینجا بذارید
+const coinMarketCapAPIKey = "6417c9d2-9dff-4637-8487-08ef598f23c6";
+const footballAPIKey = "df2e5dba4ccc4ddeabe774cbab10b082"; // API Key از API Football
 
 bot.start((ctx) => {
   ctx.reply(
@@ -14,13 +15,60 @@ bot.start((ctx) => {
   );
 });
 
+// دریافت قیمت بیت کوین از API CoinGecko
+bot.hears("💰 قیمت بیت کوین", async (ctx) => {
+  try {
+    const response = await axios.get(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+    );
+    const price = response.data.bitcoin.usd;
+    ctx.reply(`💸 قیمت بیت کوین امروز: $${price} دلار`);
+  } catch (error) {
+    ctx.reply(
+      "❌ مشکلی در دریافت قیمت بیت کوین پیش آمد، لطفاً بعداً امتحان کنید."
+    );
+  }
+});
+
+// دریافت قیمت ناتکوین از CoinMarketCap
+bot.hears("💰 قیمت ناتکوین", async (ctx) => {
+  try {
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": coinMarketCapAPIKey,
+        },
+        params: {
+          start: 1,
+          limit: 10,
+          convert: "USD",
+        },
+      }
+    );
+
+    const natcoin = response.data.data.find(
+      (coin) => coin.name.toLowerCase() === "natcoin"
+    );
+    if (natcoin) {
+      const price = natcoin.quote.USD.price;
+      ctx.reply(`💸 قیمت ناتکوین امروز: $${price} دلار`);
+    } else {
+      ctx.reply("❌ قیمت ناتکوین پیدا نشد.");
+    }
+  } catch (error) {
+    ctx.reply(
+      "❌ مشکلی در دریافت قیمت ناتکوین پیش آمد، لطفاً بعداً امتحان کنید."
+    );
+  }
+});
+
 // نمایش بازی‌های روزانه لالیگا و چمپیونشیپ
 bot.hears("⚽ بازی‌های روزانه", async (ctx) => {
   try {
+    // دریافت بازی‌های روزانه از API فوتبال
     const today = new Date().toISOString().split("T")[0]; // تاریخ امروز به فرمت YYYY-MM-DD
-
-    // درخواست برای بازی‌های لالیگا
-    const laLigaResponse = await axios.get(
+    const response = await axios.get(
       "https://api.football-api.com/2.0/matches",
       {
         headers: {
@@ -28,14 +76,17 @@ bot.hears("⚽ بازی‌های روزانه", async (ctx) => {
         },
         params: {
           date: today,
-          league_id: "PD", // لالیگا
+          league_id: "PD", // لالیگا (ID مربوط به لالیگا)
           timezone: "Europe/Madrid",
         },
       }
     );
 
-    // درخواست برای بازی‌های چمپیونشیپ
-    const championshipResponse = await axios.get(
+    const laLigaMatches = response.data.filter(
+      (match) => match.league.name === "La Liga"
+    );
+
+    const championshipMatchesResponse = await axios.get(
       "https://api.football-api.com/2.0/matches",
       {
         headers: {
@@ -43,17 +94,15 @@ bot.hears("⚽ بازی‌های روزانه", async (ctx) => {
         },
         params: {
           date: today,
-          league_id: "FL1", // چمپیونشیپ
+          league_id: "FL1", // چمپیونشیپ (ID مربوط به چمپیونشیپ)
           timezone: "Europe/London",
         },
       }
     );
 
-    // بازی‌های لالیگا
-    const laLigaMatches = laLigaResponse.data.matches;
-
-    // بازی‌های چمپیونشیپ
-    const championshipMatches = championshipResponse.data.matches;
+    const championshipMatches = championshipMatchesResponse.data.filter(
+      (match) => match.league.name === "Championship"
+    );
 
     let message = "بازی‌های امروز:\n\n";
 
@@ -77,10 +126,6 @@ bot.hears("⚽ بازی‌های روزانه", async (ctx) => {
 
     ctx.reply(message);
   } catch (error) {
-    console.log(
-      "خطا در دریافت داده‌ها: ",
-      error.response ? error.response.data : error.message
-    );
     ctx.reply("❌ مشکلی در دریافت بازی‌ها پیش آمد، لطفاً بعداً امتحان کنید.");
   }
 });
