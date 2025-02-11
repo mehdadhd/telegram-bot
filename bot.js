@@ -6,27 +6,26 @@ const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI");
 bot.start((ctx) => {
   ctx.reply(
     "سلام! لطفاً یکی از گزینه‌های زیر رو انتخاب کن:",
-    Markup.keyboard([["💰 قیمت دلار", "ℹ️ درباره ما"], ["❓ راهنما"]]).resize()
+    Markup.keyboard([
+      ["💰 قیمت بیت کوین"], // فقط دکمه قیمت بیت کوین
+      ["ℹ️ درباره ما"], // دکمه برای درباره ما
+      ["❓ راهنما"], // دکمه برای راهنما
+    ]).resize()
   );
 });
 
-// دریافت قیمت دلار از API جایگزین
-bot.hears("💰 قیمت دلار", async (ctx) => {
+// دریافت قیمت بیت کوین از API CoinGecko
+bot.hears("💰 قیمت بیت کوین", async (ctx) => {
   try {
     const response = await axios.get(
-      "https://api.tgju.org/v1/market/indicator/summary"
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
     );
-    const price = response.data.data.find(
-      (item) => item.key === "price_dollar_rl"
-    );
-
-    if (price && price.value) {
-      ctx.reply(`💵 قیمت دلار امروز: ${price.value} تومان`);
-    } else {
-      ctx.reply("❌ نتونستم قیمت دلار رو بگیرم، لطفاً بعداً امتحان کن.");
-    }
+    const price = response.data.bitcoin.usd;
+    ctx.reply(`💸 قیمت بیت کوین امروز: $${price} دلار`);
   } catch (error) {
-    ctx.reply("❌ مشکلی در دریافت قیمت دلار پیش آمد، لطفاً بعداً امتحان کنید.");
+    ctx.reply(
+      "❌ مشکلی در دریافت قیمت بیت کوین پیش آمد، لطفاً بعداً امتحان کنید."
+    );
   }
 });
 
