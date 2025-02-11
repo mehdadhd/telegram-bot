@@ -5,7 +5,7 @@ const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI");
 
 // وقتی کاربر /start رو بزنه، این پیام رو می‌گیره
 bot.start((ctx) => {
-  ctx.reply("سلام! به ربات من خوش اومدی 🤖");
+  ctx.reply("سلام! به ربات من خوش اومدی ");
 });
 
 // وقتی کاربر /help رو بزنه، این پیام رو دریافت می‌کنه
