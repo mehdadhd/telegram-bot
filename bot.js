@@ -1,8 +1,8 @@
 const { Telegraf, Markup } = require("telegraf");
 const axios = require("axios");
 
-const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // توکن ربات خود را وارد کنید
-const channelUsername = "@ztuwzu5eykfri5w4y"; // یوزرنیم کانال موردنظر
+const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // جایگزین کنید با توکن ربات خود
+const channelUsername = "@ztuwzu5eykfri5w4y"; // جایگزین کنید با نام کانال موردنظر
 
 // بررسی عضویت در کانال هنگام /start
 bot.start(async (ctx) => {
@@ -75,7 +75,7 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", (ctx) => {
     "🔽 لطفاً یکی از ارزهای زیر را انتخاب کنید:",
     Markup.inlineKeyboard([
       [Markup.button.callback("💰 قیمت بیت کوین", "btc_price")],
-      [Markup.button.callback("💰 قیمت ناتکوین", "near_price")],
+      [Markup.button.callback("💰 قیمت ناتکوین", "not_price")],
       [Markup.button.callback("💰 قیمت اتریوم", "eth_price")],
       [Markup.button.callback("💰 قیمت تون کوین", "ton_price")],
       [Markup.button.callback("💰 قیمت سولانا", "sol_price")],
@@ -84,7 +84,7 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", (ctx) => {
   );
 });
 
-// توابع دریافت قیمت از API CoinGecko برای همه ارزها
+// تابع دریافت قیمت از API CoinGecko
 async function getCryptoPrice(ctx, coinId, coinName) {
   try {
     const response = await axios.get(
@@ -104,15 +104,15 @@ async function getCryptoPrice(ctx, coinId, coinName) {
   }
 }
 
-// دکمه‌های قیمت ارزها با API صحیح
+// اصلاح نام‌های API برای ناتکوین و دوج کوین
 bot.action("btc_price", (ctx) => getCryptoPrice(ctx, "bitcoin", "بیت کوین"));
-bot.action("near_price", (ctx) => getCryptoPrice(ctx, "near", "ناتکوین"));
+bot.action("not_price", (ctx) => getCryptoPrice(ctx, "notcoin", "ناتکوین")); // اصلاح شد
 bot.action("eth_price", (ctx) => getCryptoPrice(ctx, "ethereum", "اتریوم"));
 bot.action("ton_price", (ctx) =>
   getCryptoPrice(ctx, "the-open-network", "تون کوین")
 );
 bot.action("sol_price", (ctx) => getCryptoPrice(ctx, "solana", "سولانا"));
-bot.action("doge_price", (ctx) => getCryptoPrice(ctx, "dogecoin", "دوج کوین"));
+bot.action("doge_price", (ctx) => getCryptoPrice(ctx, "dogecoin", "دوج کوین")); // اصلاح شد
 
 // راه‌اندازی ربات
 bot.launch();
