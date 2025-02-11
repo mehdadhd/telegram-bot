@@ -1,8 +1,7 @@
 const { Telegraf, Markup } = require("telegraf");
-const axios = require("axios");
 
-const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // توکن ربات خودت را وارد کن
-const channelUsername = "@ztuwzu5eykfri5w4y"; // یوزرنیم کانال خودت را وارد کن
+const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // توکن ربات خود را وارد کنید
+const channelUsername = "@ztuwzu5eykfri5w4y"; // یوزرنیم کانال خود را اینجا قرار دهید
 
 bot.start(async (ctx) => {
   const userId = ctx.from.id;
@@ -26,22 +25,64 @@ bot.start(async (ctx) => {
         ]).resize()
       );
     } else {
-      // اگر عضو نبود، پیام اخطار و لینک عضویت ارسال کن
+      // اگر عضو نبود، دکمه شیشه‌ای برای عضویت نمایش داده شود
       ctx.reply(
-        `❌ برای استفاده از ربات، باید ابتدا عضو کانال شوید:
-🔗 [عضویت در کانال](${`https://t.me/${channelUsername.replace("@", "")}`})
-✅ پس از عضویت، دستور /start را دوباره بزنید.`,
-        { parse_mode: "Markdown" }
+        "❌ برای استفاده از ربات، ابتدا باید عضو کانال شوید.",
+        Markup.inlineKeyboard([
+          [
+            Markup.button.url(
+              "📢 عضویت در کانال",
+              `https://t.me/${channelUsername.replace("@", "")}`
+            ),
+          ],
+          [Markup.button.callback("🔄 بررسی عضویت", "check_membership")],
+        ])
       );
     }
   } catch (error) {
     console.log("خطا در بررسی عضویت: ", error.message);
     ctx.reply(
-      `❌ برای استفاده از ربات، باید ابتدا عضو کانال شوید:
-🔗 [عضویت در کانال](${`https://t.me/${channelUsername.replace("@", "")}`})
-✅ پس از عضویت، دستور /start را دوباره بزنید.`,
-      { parse_mode: "Markdown" }
+      "❌ برای استفاده از ربات، ابتدا باید عضو کانال شوید.",
+      Markup.inlineKeyboard([
+        [
+          Markup.button.url(
+            "📢 عضویت در کانال",
+            `https://t.me/${channelUsername.replace("@", "")}`
+          ),
+        ],
+        [Markup.button.callback("🔄 بررسی عضویت", "check_membership")],
+      ])
     );
+  }
+});
+
+// بررسی دوباره عضویت وقتی کاربر روی "🔄 بررسی عضویت" کلیک کند
+bot.action("check_membership", async (ctx) => {
+  const userId = ctx.from.id;
+
+  try {
+    const response = await ctx.telegram.getChatMember(channelUsername, userId);
+
+    if (
+      response.status === "member" ||
+      response.status === "administrator" ||
+      response.status === "creator"
+    ) {
+      ctx.reply(
+        "✅ عضویت شما تایید شد! از امکانات ربات استفاده کنید.",
+        Markup.keyboard([
+          ["💰 قیمت بیت کوین", "💰 قیمت ناتکوین"],
+          ["⚽ بازی‌های روزانه"],
+        ]).resize()
+      );
+    } else {
+      ctx.answerCbQuery("❌ هنوز عضو کانال نشده‌اید!", { show_alert: true });
+    }
+  } catch (error) {
+    console.log("خطا در بررسی عضویت مجدد: ", error.message);
+    ctx.answerCbQuery("❌ خطایی رخ داد، لطفاً دوباره امتحان کنید.", {
+      show_alert: true,
+    });
   }
 });
 
