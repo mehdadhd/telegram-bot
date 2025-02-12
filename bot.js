@@ -25,7 +25,7 @@ bot.start(async (ctx) => {
 
   if (!(await isUserMember(userId, ctx))) {
     return ctx.reply(
-      "❌ برای استفاده از ربات ابتدا باید عضو کانال شوید. لطفاً روی دکمه زیر کلیک کنید.",
+      "❌ لطفاً برای استفاده از امکانات ربات به کانال زیر عضو شوید و سپس روی دکمه 'بررسی عضویت' کلیک کنید.",
       Markup.inlineKeyboard([
         [
           Markup.button.url(
@@ -33,6 +33,7 @@ bot.start(async (ctx) => {
             `https://t.me/${channelUsername.replace("@", "")}`
           ),
         ],
+        [Markup.button.callback("🔄 بررسی عضویت", "check_membership")],
       ])
     );
   }
@@ -49,7 +50,7 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
 
   if (!(await isUserMember(userId, ctx))) {
     return ctx.reply(
-      "❌ برای استفاده از این قابلیت، ابتدا عضو کانال شوید.",
+      "❌ برای استفاده از این قابلیت، ابتدا باید عضو کانال شوید.",
       Markup.inlineKeyboard([
         [
           Markup.button.url(
@@ -66,11 +67,11 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
       "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,notcoin,ethereum,the-open-network,solana,dogecoin,tether&vs_currencies=usd"
     );
 
-    // گرفتن قیمت تتر از API ایرانی برای تومان
+    // گرفتن قیمت تتر از API معتبر ایرانی
     const tetherResponse = await axios.get(
-      "https://api.coingate.com/v2/rates/USDT/IRR"
+      "https://api.cryptingup.com/v1/price/tether?currency=iranian-ryal"
     );
-    const tetherPriceInIRR = tetherResponse.data.rate;
+    const tetherPriceInIRR = tetherResponse.data.price;
 
     const prices = response.data;
     const message = `
@@ -105,7 +106,7 @@ bot.action("update_prices", async (ctx) => {
 
   if (!(await isUserMember(userId, ctx))) {
     return ctx.reply(
-      "❌ برای استفاده از این قابلیت، ابتدا عضو کانال شوید.",
+      "❌ برای استفاده از این قابلیت، ابتدا باید عضو کانال شوید.",
       Markup.inlineKeyboard([
         [
           Markup.button.url(
@@ -122,10 +123,11 @@ bot.action("update_prices", async (ctx) => {
       "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,notcoin,ethereum,the-open-network,solana,dogecoin,tether&vs_currencies=usd"
     );
 
+    // گرفتن قیمت تتر از API معتبر ایرانی
     const tetherResponse = await axios.get(
-      "https://api.coingate.com/v2/rates/USDT/IRR"
+      "https://api.cryptingup.com/v1/price/tether?currency=iranian-ryal"
     );
-    const tetherPriceInIRR = tetherResponse.data.rate;
+    const tetherPriceInIRR = tetherResponse.data.price;
 
     const prices = response.data;
     const message = `
