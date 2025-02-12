@@ -4,15 +4,14 @@ const axios = require("axios");
 const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // جایگزین کنید با توکن ربات خود
 const channelUsername = "@ztuwzu5eykfri5w4y"; // جایگزین کنید با نام کانال موردنظر
 
-let cryptoList = [
+const cryptoList = [
   "bitcoin",
   "notcoin",
   "ethereum",
-  "the-open-network",
+  "toncoin",
   "solana",
   "dogecoin",
 ];
-const userStates = {};
 
 // بررسی عضویت کاربر
 async function isUserMember(userId, ctx) {
@@ -56,11 +55,6 @@ bot.start(async (ctx) => {
 
 // دکمه "📊 قیمت لحظه‌ای کریپتو"
 bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
-  await sendCryptoPrices(ctx);
-});
-
-// ارسال قیمت ارزهای دیجیتال
-async function sendCryptoPrices(ctx) {
   try {
     const response = await axios.get(
       `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoList.join(
@@ -81,46 +75,10 @@ async function sendCryptoPrices(ctx) {
 
     message += "\n🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*";
 
-    ctx.reply(message, {
-      parse_mode: "Markdown",
-      reply_markup: Markup.inlineKeyboard([
-        [Markup.button.callback("🔄 بروزرسانی قیمت‌ها", "update_prices")],
-        [Markup.button.callback("➕ افزودن ارز دیجیتال جدید", "add_currency")],
-      ]),
-    });
+    ctx.reply(message, { parse_mode: "Markdown" });
   } catch (error) {
     console.error("خطا در دریافت قیمت ارزها:", error);
     ctx.reply("❌ مشکلی در دریافت قیمت‌ها پیش آمد، لطفاً بعداً امتحان کنید.");
-  }
-}
-
-// بروزرسانی قیمت‌ها
-bot.action("update_prices", async (ctx) => {
-  await sendCryptoPrices(ctx);
-});
-
-// افزودن ارز دیجیتال جدید
-bot.action("add_currency", (ctx) => {
-  const userId = ctx.from.id;
-  userStates[userId] = "awaiting_currency";
-  ctx.reply(
-    "🔹 لطفاً نام ارز دیجیتال موردنظر را به انگلیسی ارسال کنید (مثلاً: shiba-inu)"
-  );
-});
-
-bot.on("text", async (ctx) => {
-  const userId = ctx.from.id;
-  if (userStates[userId] === "awaiting_currency") {
-    const newCrypto = ctx.message.text.toLowerCase().trim();
-    delete userStates[userId];
-
-    if (!cryptoList.includes(newCrypto)) {
-      cryptoList.push(newCrypto);
-      ctx.reply(`✅ ارز **${newCrypto.toUpperCase()}** با موفقیت اضافه شد!`);
-      await sendCryptoPrices(ctx);
-    } else {
-      ctx.reply("⚠️ این ارز قبلاً در لیست وجود دارد!");
-    }
   }
 });
 
