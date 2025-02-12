@@ -1,8 +1,8 @@
 const { Telegraf, Markup } = require("telegraf");
 const axios = require("axios");
 
-const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // جایگزین کنید با توکن ربات خود
-const channelUsername = "@ztuwzu5eykfri5w4y"; // جایگزین کنید با نام کانال موردنظر
+const bot = new Telegraf("YOUR_BOT_TOKEN"); // جایگزین با توکن ربات
+const channelUsername = "@YOUR_CHANNEL_USERNAME"; // جایگزین با نام کانال شما
 
 const cryptoList = [
   { id: "bitcoin", name: "بیت کوین" },
@@ -13,17 +13,13 @@ const cryptoList = [
   { id: "dogecoin", name: "دوج کوین" },
 ];
 
-// بررسی عضویت کاربر
+// بررسی عضویت کاربر در کانال
 async function isUserMember(userId, ctx) {
   try {
     const response = await ctx.telegram.getChatMember(channelUsername, userId);
-    return (
-      response.status === "member" ||
-      response.status === "administrator" ||
-      response.status === "creator"
-    );
+    return ["member", "administrator", "creator"].includes(response.status);
   } catch (error) {
-    console.log("خطا در بررسی عضویت: ", error.message);
+    console.log("خطا در بررسی عضویت:", error.message);
     return false;
   }
 }
@@ -53,7 +49,7 @@ bot.start(async (ctx) => {
   );
 });
 
-// دکمه "📊 قیمت لحظه‌ای کریپتو"
+// دریافت قیمت ارزها
 bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
   try {
     const response = await axios.get(
@@ -62,37 +58,61 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
         .join(",")}&vs_currencies=usd`
     );
 
-    const prices = response.data;
-    let message = "📊 **قیمت لحظه‌ای ارزهای دیجیتال**:\n\n";
+    if (!response.data || Object.keys(response.data).length === 0) {
+      return ctx.reply(
+        "❌ خطایی در دریافت قیمت ارزها رخ داده است، لطفاً بعداً امتحان کنید."
+      );
+    }
 
+    let message = "📊 *قیمت لحظه‌ای ارزهای دیجیتال*:\n\n";
     cryptoList.forEach((crypto) => {
-      if (prices[crypto.id] && prices[crypto.id].usd !== undefined) {
-        message += `💰 **${crypto.name}**: ${prices[crypto.id].usd} دلار\n`;
+      if (
+        response.data[crypto.id] &&
+        response.data[crypto.id].usd !== undefined
+      ) {
+        message += `💰 *${crypto.name}*: ${
+          response.data[crypto.id].usd
+        } دلار\n`;
       }
     });
-
     message += "\n🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*";
 
-    ctx.reply(message, { parse_mode: "Markdown" });
+    ctx.reply(message, { parse_mode: "MarkdownV2" });
   } catch (error) {
     console.error("خطا در دریافت قیمت ارزها:", error);
     ctx.reply("❌ مشکلی در دریافت قیمت‌ها پیش آمد، لطفاً بعداً امتحان کنید.");
   }
 });
 
-// بررسی عضویت مجدد
+// بررسی مجدد عضویت
 bot.action("check_membership", async (ctx) => {
   const userId = ctx.from.id;
 
   if (await isUserMember(userId, ctx)) {
-    ctx.reply(
-      "✅ عضویت شما تایید شد! حالا می‌توانید از امکانات ربات استفاده کنید.",
+    await ctx.editMessageText(
+      "✅ عضویت شما تایید شد! حالا می‌توانید از امکانات ربات استفاده کنید."
+    );
+    return ctx.reply(
+      "🔽 منو:",
       Markup.keyboard([["📊 قیمت لحظه‌ای کریپتو"]]).resize()
     );
-  } else {
-    ctx.answerCbQuery("❌ هنوز عضو کانال نشده‌اید!", { show_alert: true });
   }
+
+  await ctx.editMessageText(
+    "❌ هنوز عضو کانال نشده‌اید! لطفاً پس از عضویت، دوباره دکمه بررسی را بزنید.",
+    Markup.inlineKeyboard([
+      [
+        Markup.button.url(
+          "📢 عضویت در کانال",
+          `https://t.me/${channelUsername.replace("@", "")}`
+        ),
+      ],
+      [Markup.button.callback("🔄 بررسی مجدد", "check_membership")],
+    ])
+  );
 });
 
 // راه‌اندازی ربات
 bot.launch();
+
+console.log("✅ ربات با موفقیت راه‌اندازی شد!");
