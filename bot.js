@@ -21,6 +21,22 @@ async function isUserMember(userId, ctx) {
 
 // هنگام /start
 bot.start(async (ctx) => {
+  const userId = ctx.from.id;
+
+  if (!(await isUserMember(userId, ctx))) {
+    return ctx.reply(
+      "❌ برای استفاده از ربات ابتدا باید عضو کانال شوید. لطفاً روی دکمه زیر کلیک کنید.",
+      Markup.inlineKeyboard([
+        [
+          Markup.button.url(
+            "📢 عضویت در کانال",
+            `https://t.me/${channelUsername.replace("@", "")}`
+          ),
+        ],
+      ])
+    );
+  }
+
   ctx.reply(
     "✅ خوش آمدید! لطفاً از منوی زیر استفاده کنید:",
     Markup.keyboard([["📊 قیمت لحظه‌ای کریپتو"]]).resize()
@@ -47,8 +63,14 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
 
   try {
     const response = await axios.get(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,notcoin,ethereum,the-open-network,solana,dogecoin,tether&vs_currencies=usd,try"
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,notcoin,ethereum,the-open-network,solana,dogecoin,tether&vs_currencies=usd"
     );
+
+    // گرفتن قیمت تتر از API ایرانی برای تومان
+    const tetherResponse = await axios.get(
+      "https://api.coingate.com/v2/rates/USDT/IRR"
+    );
+    const tetherPriceInIRR = tetherResponse.data.rate;
 
     const prices = response.data;
     const message = `
@@ -60,7 +82,7 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
 💰 **تون کوین (TON):** ${prices["the-open-network"].usd} دلار
 💰 **سولانا (SOL):** ${prices.solana.usd} دلار
 💰 **دوج کوین (DOGE):** ${prices.dogecoin.usd} دلار
-💰 **تتر (USDT):** ${prices.tether.try} تومان
+💰 **تتر (USDT):** ${tetherPriceInIRR} تومان
 
 🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*
 `;
@@ -97,8 +119,13 @@ bot.action("update_prices", async (ctx) => {
 
   try {
     const response = await axios.get(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,notcoin,ethereum,the-open-network,solana,dogecoin,tether&vs_currencies=usd,try"
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,notcoin,ethereum,the-open-network,solana,dogecoin,tether&vs_currencies=usd"
     );
+
+    const tetherResponse = await axios.get(
+      "https://api.coingate.com/v2/rates/USDT/IRR"
+    );
+    const tetherPriceInIRR = tetherResponse.data.rate;
 
     const prices = response.data;
     const message = `
@@ -110,7 +137,7 @@ bot.action("update_prices", async (ctx) => {
 💰 **تون کوین (TON):** ${prices["the-open-network"].usd} دلار
 💰 **سولانا (SOL):** ${prices.solana.usd} دلار
 💰 **دوج کوین (DOGE):** ${prices.dogecoin.usd} دلار
-💰 **تتر (USDT):** ${prices.tether.try} تومان
+💰 **تتر (USDT):** ${tetherPriceInIRR} تومان
 
 🔄 *قیمت‌ها به روز رسانی شدند!*
 `;
