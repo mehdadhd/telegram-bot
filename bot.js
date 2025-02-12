@@ -66,7 +66,7 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
     let message = "📊 **قیمت لحظه‌ای ارزهای دیجیتال**:\n\n";
 
     cryptoList.forEach((crypto) => {
-      if (prices[crypto.id]) {
+      if (prices[crypto.id] && prices[crypto.id].usd !== undefined) {
         message += `💰 **${crypto.name}**: ${prices[crypto.id].usd} دلار\n`;
       }
     });
