@@ -12,6 +12,7 @@ let cryptoList = [
   "solana",
   "dogecoin",
 ];
+const userStates = {};
 
 // بررسی عضویت کاربر
 async function isUserMember(userId, ctx) {
@@ -100,11 +101,19 @@ bot.action("update_prices", async (ctx) => {
 
 // افزودن ارز دیجیتال جدید
 bot.action("add_currency", (ctx) => {
+  const userId = ctx.from.id;
+  userStates[userId] = "awaiting_currency";
   ctx.reply(
     "🔹 لطفاً نام ارز دیجیتال موردنظر را به انگلیسی ارسال کنید (مثلاً: shiba-inu)"
   );
-  bot.on("text", async (ctx) => {
-    const newCrypto = ctx.message.text.toLowerCase();
+});
+
+bot.on("text", async (ctx) => {
+  const userId = ctx.from.id;
+  if (userStates[userId] === "awaiting_currency") {
+    const newCrypto = ctx.message.text.toLowerCase().trim();
+    delete userStates[userId];
+
     if (!cryptoList.includes(newCrypto)) {
       cryptoList.push(newCrypto);
       ctx.reply(`✅ ارز **${newCrypto.toUpperCase()}** با موفقیت اضافه شد!`);
@@ -112,7 +121,7 @@ bot.action("add_currency", (ctx) => {
     } else {
       ctx.reply("⚠️ این ارز قبلاً در لیست وجود دارد!");
     }
-  });
+  }
 });
 
 // بررسی عضویت مجدد
