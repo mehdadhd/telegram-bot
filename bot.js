@@ -4,6 +4,15 @@ const axios = require("axios");
 const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // جایگزین کنید با توکن ربات خود
 const channelUsername = "@ztuwzu5eykfri5w4y"; // جایگزین کنید با نام کانال موردنظر
 
+let cryptoList = [
+  "bitcoin",
+  "notcoin",
+  "ethereum",
+  "the-open-network",
+  "solana",
+  "dogecoin",
+];
+
 // بررسی عضویت کاربر
 async function isUserMember(userId, ctx) {
   try {
@@ -46,68 +55,64 @@ bot.start(async (ctx) => {
 
 // دکمه "📊 قیمت لحظه‌ای کریپتو"
 bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
+  await sendCryptoPrices(ctx);
+});
+
+// ارسال قیمت ارزهای دیجیتال
+async function sendCryptoPrices(ctx) {
   try {
     const response = await axios.get(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,notcoin,ethereum,the-open-network,solana,dogecoin&vs_currencies=usd"
+      `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoList.join(
+        ","
+      )}&vs_currencies=usd`
     );
 
     const prices = response.data;
-    const message = `
-📊 **قیمت لحظه‌ای ارزهای دیجیتال**:
+    let message = "📊 **قیمت لحظه‌ای ارزهای دیجیتال**:\n\n";
 
-💰 **بیت کوین (BTC):** ${prices.bitcoin.usd} دلار
-💰 **ناتکوین (NOT):** ${prices.notcoin.usd} دلار
-💰 **اتریوم (ETH):** ${prices.ethereum.usd} دلار
-💰 **تون کوین (TON):** ${prices["the-open-network"].usd} دلار
-💰 **سولانا (SOL):** ${prices.solana.usd} دلار
-💰 **دوج کوین (DOGE):** ${prices.dogecoin.usd} دلار
+    cryptoList.forEach((crypto) => {
+      if (prices[crypto]) {
+        message += `💰 **${crypto.toUpperCase()}**: ${
+          prices[crypto].usd
+        } دلار\n`;
+      }
+    });
 
-🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*
-`;
+    message += "\n🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*";
 
     ctx.reply(message, {
       parse_mode: "Markdown",
       reply_markup: Markup.inlineKeyboard([
         [Markup.button.callback("🔄 بروزرسانی قیمت‌ها", "update_prices")],
+        [Markup.button.callback("➕ افزودن ارز دیجیتال جدید", "add_currency")],
       ]),
     });
   } catch (error) {
     console.error("خطا در دریافت قیمت ارزها:", error);
     ctx.reply("❌ مشکلی در دریافت قیمت‌ها پیش آمد، لطفاً بعداً امتحان کنید.");
   }
-});
+}
 
 // بروزرسانی قیمت‌ها
 bot.action("update_prices", async (ctx) => {
-  try {
-    const response = await axios.get(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,notcoin,ethereum,the-open-network,solana,dogecoin&vs_currencies=usd"
-    );
+  await sendCryptoPrices(ctx);
+});
 
-    const prices = response.data;
-    const message = `
-📊 **قیمت لحظه‌ای ارزهای دیجیتال**:
-
-💰 **بیت کوین (BTC):** ${prices.bitcoin.usd} دلار
-💰 **ناتکوین (NOT):** ${prices.notcoin.usd} دلار
-💰 **اتریوم (ETH):** ${prices.ethereum.usd} دلار
-💰 **تون کوین (TON):** ${prices["the-open-network"].usd} دلار
-💰 **سولانا (SOL):** ${prices.solana.usd} دلار
-💰 **دوج کوین (DOGE):** ${prices.dogecoin.usd} دلار
-
-🔄 *قیمت‌ها به روز رسانی شدند!*
-`;
-
-    ctx.editMessageText(message, {
-      parse_mode: "Markdown",
-      reply_markup: Markup.inlineKeyboard([
-        [Markup.button.callback("🔄 بروزرسانی قیمت‌ها", "update_prices")],
-      ]),
-    });
-  } catch (error) {
-    console.error("خطا در دریافت قیمت ارزها:", error);
-    ctx.reply("❌ مشکلی در دریافت قیمت‌ها پیش آمد، لطفاً بعداً امتحان کنید.");
-  }
+// افزودن ارز دیجیتال جدید
+bot.action("add_currency", (ctx) => {
+  ctx.reply(
+    "🔹 لطفاً نام ارز دیجیتال موردنظر را به انگلیسی ارسال کنید (مثلاً: shiba-inu)"
+  );
+  bot.on("text", async (ctx) => {
+    const newCrypto = ctx.message.text.toLowerCase();
+    if (!cryptoList.includes(newCrypto)) {
+      cryptoList.push(newCrypto);
+      ctx.reply(`✅ ارز **${newCrypto.toUpperCase()}** با موفقیت اضافه شد!`);
+      await sendCryptoPrices(ctx);
+    } else {
+      ctx.reply("⚠️ این ارز قبلاً در لیست وجود دارد!");
+    }
+  });
 });
 
 // بررسی عضویت مجدد
