@@ -1,8 +1,8 @@
 const { Telegraf, Markup } = require("telegraf");
 const axios = require("axios");
 
-const bot = new Telegraf("YOUR_BOT_TOKEN"); // جایگزین با توکن ربات
-const channelUsername = "@YOUR_CHANNEL_USERNAME"; // جایگزین با نام کانال شما
+const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // جایگزین با توکن ربات
+const channelUsername = "@ztuwzu5eykfri5w4y"; // جایگزین با نام کانال شما
 
 const cryptoList = [
   { id: "bitcoin", name: "بیت کوین" },
