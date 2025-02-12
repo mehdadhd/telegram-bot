@@ -5,12 +5,12 @@ const bot = new Telegraf("7592719498:AAF1-bj_rlVQrhsTJkNnmAHUnerLDLohYkI"); // �
 const channelUsername = "@ztuwzu5eykfri5w4y"; // جایگزین کنید با نام کانال موردنظر
 
 const cryptoList = [
-  "bitcoin",
-  "notcoin",
-  "ethereum",
-  "toncoin",
-  "solana",
-  "dogecoin",
+  { id: "bitcoin", name: "بیت کوین" },
+  { id: "notcoin", name: "نات کوین" },
+  { id: "ethereum", name: "اتریوم" },
+  { id: "toncoin", name: "تون کوین" },
+  { id: "solana", name: "سولانا" },
+  { id: "dogecoin", name: "دوج کوین" },
 ];
 
 // بررسی عضویت کاربر
@@ -57,19 +57,17 @@ bot.start(async (ctx) => {
 bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
   try {
     const response = await axios.get(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoList.join(
-        ","
-      )}&vs_currencies=usd`
+      `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoList
+        .map((c) => c.id)
+        .join(",")}&vs_currencies=usd`
     );
 
     const prices = response.data;
     let message = "📊 **قیمت لحظه‌ای ارزهای دیجیتال**:\n\n";
 
     cryptoList.forEach((crypto) => {
-      if (prices[crypto]) {
-        message += `💰 **${crypto.toUpperCase()}**: ${
-          prices[crypto].usd
-        } دلار\n`;
+      if (prices[crypto.id]) {
+        message += `💰 **${crypto.name}**: ${prices[crypto.id].usd} دلار\n`;
       }
     });
 
