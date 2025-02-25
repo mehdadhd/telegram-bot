@@ -44,8 +44,8 @@ bot.start(async (ctx) => {
   ctx.reply(
     "✅ خوش آمدید! لطفاً از منوی زیر استفاده کنید:",
     Markup.keyboard([
-      ["🌍 نمای کلی بازار"], // دکمه جدید بالای همه
-      ["📊 قیمت لحظه‌ای کریپتو"],
+      ["🌍 نمای کلی بازار"],
+      ["📊 واچ‌لیست قیمتی"], // تغییر نام دکمه
       ["🔔 هشدار قیمتی"],
     ]).resize()
   );
@@ -97,8 +97,8 @@ bot.hears("🌍 نمای کلی بازار", async (ctx) => {
   }
 });
 
-// دکمه "📊 قیمت لحظه‌ای کریپتو"
-bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
+// دکمه "📊 واچ‌لیست قیمتی"
+bot.hears("📊 واچ‌لیست قیمتی", async (ctx) => {
   const userId = ctx.from.id;
 
   if (!(await isUserMember(userId, ctx))) {
@@ -116,54 +116,15 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
     );
   }
 
-  try {
-    const baseCoins = [
-      "bitcoin",
-      "notcoin",
-      "ethereum",
-      "ton",
-      "solana",
-      "dogecoin",
-    ];
-    const allCoins = [...baseCoins, ...userAddedCoins];
-    const coinList = allCoins.join(",");
-
-    const response = await axios.get(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${coinList}&vs_currencies=usd`
-    );
-
-    const prices = response.data;
-    let priceMessage = "📊 **قیمت لحظه‌ای ارزهای دیجیتال**:\n\n";
-
-    for (let coin in prices) {
-      priceMessage += `💰 **${
-        coin.charAt(0).toUpperCase() + coin.slice(1)
-      }:** ${prices[coin].usd} دلار\n`;
-    }
-
-    priceMessage += "\n🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*";
-
-    await ctx.reply(priceMessage, {
-      parse_mode: "Markdown",
-      reply_markup: {
-        inline_keyboard: [
-          [Markup.button.callback("🔄 بروزرسانی", "update_prices")],
-        ],
-      },
-    });
-
-    ctx.reply(
-      "لطفا یک گزینه را انتخاب کنید:",
-      Markup.keyboard([
-        ["💵 قیمت تتر"],
-        ["➕ اضافه کردن ارز جدید"],
-        ["↩️ بازگشت به منو اصلی"],
-      ]).resize()
-    );
-  } catch (error) {
-    console.error("خطا در دریافت قیمت ارزها:", error);
-    ctx.reply("❌ مشکلی در دریافت قیمت‌ها پیش آمد، لطفاً بعداً امتحان کنید.");
-  }
+  await showWatchlist(ctx);
+  ctx.reply(
+    "لطفا یک گزینه را انتخاب کنید:",
+    Markup.keyboard([
+      ["💵 قیمت تتر"],
+      ["➕ اضافه کردن ارز جدید"],
+      ["↩️ بازگشت به منو اصلی"],
+    ]).resize()
+  );
 });
 
 // دکمه "🔔 هشدار قیمتی"
@@ -219,8 +180,8 @@ bot.hears("↩️ بازگشت به منو اصلی", async (ctx) => {
   ctx.reply(
     "✅ خوش آمدید! لطفاً از منوی زیر استفاده کنید:",
     Markup.keyboard([
-      ["🌍 نمای کلی بازار"], // دکمه جدید بالای همه
-      ["📊 قیمت لحظه‌ای کریپتو"],
+      ["🌍 نمای کلی بازار"],
+      ["📊 واچ‌لیست قیمتی"], // تغییر نام دکمه
       ["🔔 هشدار قیمتی"],
     ]).resize()
   );
@@ -252,7 +213,7 @@ bot.on("message", async (ctx) => {
         if (!userAddedCoins.includes(newCoin)) {
           userAddedCoins.push(newCoin);
           ctx.reply(`✅ ارز ${newCoin} به لیست اضافه شد.`);
-          await showUpdatedPrices(ctx);
+          await showWatchlist(ctx);
           ctx.reply(
             "لطفا یک گزینه را انتخاب کنید:",
             Markup.keyboard([
@@ -300,8 +261,8 @@ bot.on("message", async (ctx) => {
   }
 });
 
-// تابع برای نمایش قیمت‌های به‌روز شده
-async function showUpdatedPrices(ctx) {
+// تابع برای نمایش واچ‌لیست قیمتی
+async function showWatchlist(ctx) {
   try {
     const baseCoins = [
       "bitcoin",
@@ -315,21 +276,30 @@ async function showUpdatedPrices(ctx) {
     const coinList = allCoins.join(",");
 
     const response = await axios.get(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${coinList}&vs_currencies=usd`
+      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinList}&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h`
     );
 
-    const prices = response.data;
-    let priceMessage = "📊 **قیمت لحظه‌ای ارزهای دیجیتال**:\n\n";
+    const coinsData = response.data;
+    let watchlistMessage = "📊 **واچ‌لیست قیمتی**:\n\n";
 
-    for (let coin in prices) {
-      priceMessage += `💰 **${
-        coin.charAt(0).toUpperCase() + coin.slice(1)
-      }:** ${prices[coin].usd} دلار\n`;
-    }
+    coinsData.forEach((coin, index) => {
+      const name = coin.name;
+      const price = coin.current_price.toLocaleString();
+      const change24h = coin.price_change_percentage_24h.toFixed(2);
+      const changeEmoji = change24h >= 0 ? "📈" : "📉";
 
-    priceMessage += "\n🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*";
+      watchlistMessage += `💸 *${name}*\n`;
+      watchlistMessage += `   💰 قیمت: ${price} دلار\n`;
+      watchlistMessage += `   ${changeEmoji} تغییرات 24h: ${
+        change24h >= 0 ? "+" : ""
+      }${change24h}%\n`;
+      if (index < coinsData.length - 1)
+        watchlistMessage += "─".repeat(20) + "\n";
+    });
 
-    await ctx.reply(priceMessage, {
+    watchlistMessage += "\n🔄 *قیمت‌ها و تغییرات هر لحظه به‌روزرسانی می‌شوند!*";
+
+    await ctx.reply(watchlistMessage, {
       parse_mode: "Markdown",
       reply_markup: {
         inline_keyboard: [
@@ -338,8 +308,8 @@ async function showUpdatedPrices(ctx) {
       },
     });
   } catch (error) {
-    console.error("خطا در دریافت قیمت ارزها:", error);
-    ctx.reply("❌ مشکلی در دریافت قیمت‌ها پیش آمد، لطفاً بعداً امتحان کنید.");
+    console.error("خطا در دریافت واچ‌لیست:", error);
+    ctx.reply("❌ مشکلی در دریافت واچ‌لیست پیش آمد، لطفاً بعداً امتحان کنید.");
   }
 }
 
@@ -351,8 +321,8 @@ bot.action("check_membership", async (ctx) => {
     ctx.reply(
       "✅ عضویت شما تایید شد! حالا می‌توانید از امکانات ربات استفاده کنید.",
       Markup.keyboard([
-        ["🌍 نمای کلی بازار"], // دکمه جدید بالای همه
-        ["📊 قیمت لحظه‌ای کریپتو"],
+        ["🌍 نمای کلی بازار"],
+        ["📊 واچ‌لیست قیمتی"], // تغییر نام دکمه
         ["🔔 هشدار قیمتی"],
       ]).resize()
     );
@@ -372,49 +342,8 @@ bot.action("update_prices", async (ctx) => {
     return;
   }
 
-  try {
-    const baseCoins = [
-      "bitcoin",
-      "notcoin",
-      "ethereum",
-      "ton",
-      "solana",
-      "dogecoin",
-    ];
-    const allCoins = [...baseCoins, ...userAddedCoins];
-    const coinList = allCoins.join(",");
-
-    const response = await axios.get(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${coinList}&vs_currencies=usd`
-    );
-
-    const prices = response.data;
-    let priceMessage = "📊 **قیمت لحظه‌ای ارزهای دیجیتال**:\n\n";
-
-    for (let coin in prices) {
-      priceMessage += `💰 **${
-        coin.charAt(0).toUpperCase() + coin.slice(1)
-      }:** ${prices[coin].usd} دلار\n`;
-    }
-
-    priceMessage += "\n🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*";
-
-    await ctx.reply(priceMessage, {
-      parse_mode: "Markdown",
-      reply_markup: {
-        inline_keyboard: [
-          [Markup.button.callback("🔄 بروزرسانی", "update_prices")],
-        ],
-      },
-    });
-
-    await ctx.answerCbQuery("✅ قیمت‌ها بروز شد!");
-  } catch (error) {
-    console.error("خطا در بروزرسانی قیمت‌ها:", error);
-    await ctx.answerCbQuery("❌ خطایی در بروزرسانی رخ داد!", {
-      show_alert: true,
-    });
-  }
+  await showWatchlist(ctx);
+  await ctx.answerCbQuery("✅ واچ‌لیست بروز شد!");
 });
 
 // راه‌اندازی ربات
