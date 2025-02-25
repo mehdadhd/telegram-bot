@@ -43,8 +43,58 @@ bot.start(async (ctx) => {
 
   ctx.reply(
     "✅ خوش آمدید! لطفاً از منوی زیر استفاده کنید:",
-    Markup.keyboard([["📊 قیمت لحظه‌ای کریپتو"], ["🔔 هشدار قیمتی"]]).resize()
+    Markup.keyboard([
+      ["🌍 نمای کلی بازار"], // دکمه جدید بالای همه
+      ["📊 قیمت لحظه‌ای کریپتو"],
+      ["🔔 هشدار قیمتی"],
+    ]).resize()
   );
+});
+
+// دکمه "🌍 نمای کلی بازار"
+bot.hears("🌍 نمای کلی بازار", async (ctx) => {
+  const userId = ctx.from.id;
+
+  if (!(await isUserMember(userId, ctx))) {
+    return ctx.reply(
+      "❌ برای استفاده از این قابلیت، ابتدا عضو کانال شوید.",
+      Markup.inlineKeyboard([
+        [
+          Markup.button.url(
+            "📢 عضویت در کانال",
+            `https://t.me/${channelUsername.replace("@", "")}`
+          ),
+        ],
+        [Markup.button.callback("🔄 بررسی عضویت", "check_membership")],
+      ])
+    );
+  }
+
+  try {
+    const response = await axios.get("https://api.coingecko.com/api/v3/global");
+    const data = response.data.data;
+
+    const totalMarketCap = data.total_market_cap.usd.toLocaleString();
+    const totalVolume = data.total_volume.usd.toLocaleString();
+    const btcDominance = data.market_cap_percentage.btc.toFixed(1);
+    const marketCapChange =
+      data.market_cap_change_percentage_24h_usd.toFixed(2);
+
+    let marketOverview = "🌍 **نمای کلی بازار کریپتو**:\n\n";
+    marketOverview += `💰 ارزش کل بازار: ${totalMarketCap} دلار\n`;
+    marketOverview += `📉 حجم معاملات 24 ساعته: ${totalVolume} دلار\n`;
+    marketOverview += `🏆 دامیننس بیت‌کوین: ${btcDominance}%\n`;
+    marketOverview += `📈 تغییرات 24 ساعته: ${
+      marketCapChange >= 0 ? "+" : ""
+    }${marketCapChange}%\n`;
+
+    await ctx.reply(marketOverview, { parse_mode: "Markdown" });
+  } catch (error) {
+    console.error("خطا در دریافت داده‌های بازار:", error);
+    ctx.reply(
+      "❌ مشکلی در دریافت اطلاعات بازار پیش آمد، لطفاً بعداً امتحان کنید."
+    );
+  }
 });
 
 // دکمه "📊 قیمت لحظه‌ای کریپتو"
@@ -93,7 +143,6 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
 
     priceMessage += "\n🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*";
 
-    // ارسال پیام با دکمه اینلاین "بروزرسانی"
     await ctx.reply(priceMessage, {
       parse_mode: "Markdown",
       reply_markup: {
@@ -103,7 +152,6 @@ bot.hears("📊 قیمت لحظه‌ای کریپتو", async (ctx) => {
       },
     });
 
-    // نمایش منوی جدید
     ctx.reply(
       "لطفا یک گزینه را انتخاب کنید:",
       Markup.keyboard([
@@ -149,15 +197,12 @@ bot.hears("🔔 هشدار قیمتی", async (ctx) => {
 bot.hears("💵 قیمت تتر", async (ctx) => {
   try {
     const response = await axios.get("https://api.arzdigital.com/market.json");
-
-    // فرض می‌کنیم داده‌ها در قالب آرایه‌ای از ارزها ارسال شده است
     const tetherData = response.data.find(
       (currency) => currency.id === "tether"
     );
 
     if (tetherData) {
       const irrPrice = tetherData.price;
-      // تبدیل ریال به تومان (1 تومان = 10 ریال)
       const tomanPrice = irrPrice / 10;
       ctx.reply(`💵 قیمت تتر (USDT): ${tomanPrice.toLocaleString()} تومان`);
     } else {
@@ -173,7 +218,11 @@ bot.hears("💵 قیمت تتر", async (ctx) => {
 bot.hears("↩️ بازگشت به منو اصلی", async (ctx) => {
   ctx.reply(
     "✅ خوش آمدید! لطفاً از منوی زیر استفاده کنید:",
-    Markup.keyboard([["📊 قیمت لحظه‌ای کریپتو"], ["🔔 هشدار قیمتی"]]).resize()
+    Markup.keyboard([
+      ["🌍 نمای کلی بازار"], // دکمه جدید بالای همه
+      ["📊 قیمت لحظه‌ای کریپتو"],
+      ["🔔 هشدار قیمتی"],
+    ]).resize()
   );
 });
 
@@ -192,10 +241,9 @@ bot.on("message", async (ctx) => {
     ctx.message.reply_to_message &&
     ctx.message.reply_to_message.text.includes("لطفاً نماد یا نام ارز")
   ) {
-    const newCoin = ctx.message.text.toLowerCase(); // تبدیل به حروف کوچک برای سازگاری با API
+    const newCoin = ctx.message.text.toLowerCase();
 
     try {
-      // بررسی اینکه آیا ارز وجود دارد
       const coinCheck = await axios.get(
         `https://api.coingecko.com/api/v3/simple/price?ids=${newCoin}&vs_currencies=usd`
       );
@@ -204,9 +252,7 @@ bot.on("message", async (ctx) => {
         if (!userAddedCoins.includes(newCoin)) {
           userAddedCoins.push(newCoin);
           ctx.reply(`✅ ارز ${newCoin} به لیست اضافه شد.`);
-          // به روز رسانی و نمایش مجدد لیست قیمت‌ها
           await showUpdatedPrices(ctx);
-          // نمایش منوی جدید
           ctx.reply(
             "لطفا یک گزینه را انتخاب کنید:",
             Markup.keyboard([
@@ -217,7 +263,6 @@ bot.on("message", async (ctx) => {
           );
         } else {
           ctx.reply(`❌ ارز ${newCoin} قبلاً در لیست وجود دارد.`);
-          // بازگشت به منوی قبلی
           ctx.reply(
             "لطفا یک گزینه را انتخاب کنید:",
             Markup.keyboard([
@@ -231,7 +276,6 @@ bot.on("message", async (ctx) => {
         ctx.reply(
           "❌ ارز درخواستی یافت نشد. لطفاً نماد یا نام ارز را بررسی کنید."
         );
-        // بازگشت به منوی قبلی
         ctx.reply(
           "لطفا یک گزینه را انتخاب کنید:",
           Markup.keyboard([
@@ -244,7 +288,6 @@ bot.on("message", async (ctx) => {
     } catch (error) {
       console.error("خطا در بررسی ارز جدید:", error);
       ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
-      // بازگشت به منوی قبلی
       ctx.reply(
         "لطفا یک گزینه را انتخاب کنید:",
         Markup.keyboard([
@@ -286,7 +329,6 @@ async function showUpdatedPrices(ctx) {
 
     priceMessage += "\n🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*";
 
-    // ارسال پیام با دکمه اینلاین "بروزرسانی"
     await ctx.reply(priceMessage, {
       parse_mode: "Markdown",
       reply_markup: {
@@ -308,7 +350,11 @@ bot.action("check_membership", async (ctx) => {
   if (await isUserMember(userId, ctx)) {
     ctx.reply(
       "✅ عضویت شما تایید شد! حالا می‌توانید از امکانات ربات استفاده کنید.",
-      Markup.keyboard([["📊 قیمت لحظه‌ای کریپتو"], ["🔔 هشدار قیمتی"]]).resize()
+      Markup.keyboard([
+        ["🌍 نمای کلی بازار"], // دکمه جدید بالای همه
+        ["📊 قیمت لحظه‌ای کریپتو"],
+        ["🔔 هشدار قیمتی"],
+      ]).resize()
     );
   } else {
     ctx.answerCbQuery("❌ هنوز عضو کانال نشده‌اید!", { show_alert: true });
@@ -319,7 +365,6 @@ bot.action("check_membership", async (ctx) => {
 bot.action("update_prices", async (ctx) => {
   const userId = ctx.from.id;
 
-  // بررسی عضویت کاربر
   if (!(await isUserMember(userId, ctx))) {
     await ctx.answerCbQuery("❌ لطفاً ابتدا عضو کانال شوید!", {
       show_alert: true,
@@ -354,7 +399,6 @@ bot.action("update_prices", async (ctx) => {
 
     priceMessage += "\n🔄 *قیمت‌ها هر لحظه ممکن است تغییر کنند!*";
 
-    // ارسال پیام جدید با دکمه اینلاین
     await ctx.reply(priceMessage, {
       parse_mode: "Markdown",
       reply_markup: {
@@ -364,7 +408,6 @@ bot.action("update_prices", async (ctx) => {
       },
     });
 
-    // اطلاع‌رسانی به کاربر که بروزرسانی انجام شد
     await ctx.answerCbQuery("✅ قیمت‌ها بروز شد!");
   } catch (error) {
     console.error("خطا در بروزرسانی قیمت‌ها:", error);
