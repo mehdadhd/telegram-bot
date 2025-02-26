@@ -1,10 +1,8 @@
 const { Markup } = require("telegraf");
 const { CHANNEL_USERNAME, BASE_COINS } = require("../config");
-const { isUserMember } = require("./api");
-const { getMarketOverview, getTetherPrice, getWatchlistData } = require("./api");
+const { isUserMember, getMarketOverview, getTetherPrice, getWatchlistData } = require("./api");
 
 function attachCommands(bot) {
-  // هنگام /start
   bot.start(async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) {
@@ -19,7 +17,6 @@ function attachCommands(bot) {
     sendMainMenu(ctx);
   });
 
-  // نمای کلی بازار
   bot.hears("🌍 نمای کلی بازار", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -42,7 +39,6 @@ function attachCommands(bot) {
     }
   });
 
-  // واچ‌لیست قیمتی
   bot.hears("📊 واچ‌لیست قیمتی", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -62,7 +58,6 @@ function attachCommands(bot) {
     }
   });
 
-  // هشدار قیمتی
   bot.hears("🔔 هشدار قیمتی", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -72,7 +67,6 @@ function attachCommands(bot) {
     );
   });
 
-  // قیمت تتر
   bot.hears("💵 قیمت تتر", async (ctx) => {
     try {
       const price = await getTetherPrice();
@@ -82,15 +76,12 @@ function attachCommands(bot) {
     }
   });
 
-  // بازگشت به منو اصلی
   bot.hears("↩️ بازگشت به منو اصلی", (ctx) => sendMainMenu(ctx));
 
-  // اضافه کردن ارز جدید
   bot.hears("➕ اضافه کردن ارز جدید", (ctx) =>
     ctx.reply("لطفاً نماد یا نام ارز را به انگلیسی وارد کنید:", { reply_markup: { force_reply: true } })
   );
 
-  // پردازش پیام کاربر برای اضافه کردن ارز
   bot.on("message", async (ctx) => {
     if (ctx.message.reply_to_message?.text.includes("لطفاً نماد یا نام ارز")) {
       const newCoin = ctx.message.text.toLowerCase();
@@ -122,7 +113,6 @@ function attachCommands(bot) {
     }
   });
 
-  // توابع کمکی
   function sendMainMenu(ctx) {
     ctx.reply(
       "✅ خوش آمدید! لطفاً از منوی زیر استفاده کنید:",
@@ -144,7 +134,7 @@ function attachCommands(bot) {
     let message = "📊 **واچ‌لیست قیمتی**:\n\n";
     coinsData.forEach((coin, index) => {
       const name = coin.name;
-      const price = coin.current_price.toLocaleString();
+      const price = coin.current_price.toLocaleString("en-US", { minimumFractionDigits: 4 }); // دقت بیشتر در قیمت
       const change24h = coin.price_change_percentage_24h.toFixed(2);
       const changeEmoji = change24h >= 0 ? "📈" : "📉";
 

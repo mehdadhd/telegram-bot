@@ -13,10 +13,21 @@ async function isUserMember(userId, ctx) {
 
 async function getWatchlistData(coins) {
   const coinList = coins.join(",");
-  const response = await axios.get(
-    `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinList}&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h`
-  );
-  return response.data;
+  try {
+    const response = await axios.get(
+      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinList}&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h`
+    );
+    const data = response.data;
+    // چک کردن اینکه آیا Notcoin توی داده‌ها هست یا نه
+    const notcoinData = data.find(coin => coin.id === "notcoin");
+    if (!notcoinData) {
+      console.log("هشدار: Notcoin توی داده‌های API پیدا نشد!");
+    }
+    return data;
+  } catch (error) {
+    console.error("خطا در دریافت داده‌های واچ‌لیست:", error.message);
+    throw error; // خطا رو به بالا پرت می‌کنه تا توی ربات مدیریت بشه
+  }
 }
 
 async function getMarketOverview() {
@@ -28,7 +39,7 @@ async function getTetherPrice() {
   const response = await axios.get("https://api.arzdigital.com/market.json");
   const tetherData = response.data.find((currency) => currency.id === "tether");
   if (!tetherData) throw new Error("اطلاعات تتر در دسترس نیست");
-  return tetherData.price / 10; // تبدیل ریال به تومان
+  return tetherData.price / 10;
 }
 
 module.exports = { isUserMember, getWatchlistData, getMarketOverview, getTetherPrice };
