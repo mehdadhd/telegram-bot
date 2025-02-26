@@ -10,7 +10,8 @@ const {
 } = require("./api");
 
 function attachCommands(bot) {
-  bot.start(async (ctx) => {
+  // دستور /start
+  bot.command("start", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) {
       return ctx.reply(
@@ -29,6 +30,117 @@ function attachCommands(bot) {
     sendMainMenu(ctx);
   });
 
+  // دستور /market
+  bot.command("market", async (ctx) => {
+    const userId = ctx.from.id;
+    if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
+    try {
+      const [marketData, fearGreed, topData] = await Promise.all([
+        getMarketOverview(),
+        getFearGreedIndex(),
+        getTopGainersAndLosers(),
+      ]);
+
+      const totalMarketCap = marketData.total_market_cap.usd.toLocaleString();
+      const totalVolume = marketData.total_volume.usd.toLocaleString();
+      const btcDominance = marketData.market_cap_percentage.btc.toFixed(1);
+      const marketCapChange =
+        marketData.market_cap_change_percentage_24h_usd.toFixed(2);
+
+      let message = "🌍 **نمای کلی بازار کریپتو**:\n\n";
+      message += `💰 ارزش کل بازار: ${totalMarketCap} دلار\n`;
+      message += `📉 حجم معاملات 24 ساعته: ${totalVolume} دلار\n`;
+      message += `🏆 دامیننس بیت‌کوین: ${btcDominance}%\n`;
+      message += `📈 تغییرات 24 ساعته: ${
+        marketCapChange >= 0 ? "+" : ""
+      }${marketCapChange}%\n`;
+      message += "─".repeat(20) + "\n";
+
+      if (fearGreed) {
+        const value = fearGreed.value;
+        const classification = fearGreed.value_classification;
+        message += `😨 **شاخص ترس و طمع**: ${value} (${classification})\n`;
+        message += "─".repeat(20) + "\n";
+      } else {
+        message += "😨 شاخص ترس و طمع: در دسترس نیست\n";
+      }
+
+      if (topData) {
+        message += `🚀 **برترین رشد (24h)**: ${topData.topGainer.name}\n`;
+        message += `   ${topData.topGainer.price_change_percentage_24h.toFixed(
+          2
+        )}%\n`;
+        message += `📉 **برترین ریزش (24h)**: ${topData.topLoser.name}\n`;
+        message += `   ${topData.topLoser.price_change_percentage_24h.toFixed(
+          2
+        )}%\n`;
+      } else {
+        message += "🚀 برترین رشد و ریزش: در دسترس نیست\n";
+      }
+
+      ctx.reply(message, { parse_mode: "Markdown" });
+    } catch (error) {
+      ctx.reply(
+        "❌ مشکلی در دریافت اطلاعات بازار پیش آمد، لطفاً بعداً امتحان کنید."
+      );
+    }
+  });
+
+  // دستور /watchlist
+  bot.command("watchlist", async (ctx) => {
+    const userId = ctx.from.id;
+    if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
+    try {
+      if (!global.userWatchlists) global.userWatchlists = {};
+      if (!global.userWatchlists[userId])
+        global.userWatchlists[userId] = [...BASE_COINS];
+
+      const userCoins = global.userWatchlists[userId];
+      const watchlistData = await getWatchlistData(userCoins);
+      await ctx.reply(formatWatchlist(watchlistData), {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [Markup.button.callback("🔄 بروزرسانی", "update_prices")],
+          ],
+        },
+      });
+      sendWatchlistMenu(ctx);
+    } catch (error) {
+      ctx.reply(
+        "❌ مشکلی در دریافت واچ‌لیست پیش آمد، لطفاً بعداً امتحان کنید."
+      );
+    }
+  });
+
+  // دستور /alerts
+  bot.command("alerts", async (ctx) => {
+    const userId = ctx.from.id;
+    if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
+    ctx.reply(
+      "📢 منوی هشدار قیمتی:\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
+      Markup.keyboard([
+        ["📜 لیست هشدارها"],
+        ["🔔 ثبت هشدار جدید"],
+        ["🗑️ پاک کردن هشدارها"],
+        ["↩️ بازگشت به منو اصلی"],
+      ]).resize()
+    );
+  });
+
+  // دستور /tether
+  bot.command("tether", async (ctx) => {
+    try {
+      const price = await getTetherPrice();
+      ctx.reply(`💵 قیمت تتر (USDT): ${price.toLocaleString()} تومان`);
+    } catch (error) {
+      ctx.reply(
+        "❌ مشکلی در دریافت قیمت تتر پیش آمد، لطفاً بعداً امتحان کنید."
+      );
+    }
+  });
+
+  // دکمه‌های کیبورد
   bot.hears("🌍 نمای کلی بازار", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -121,12 +233,6 @@ function attachCommands(bot) {
         ["🗑️ پاک کردن هشدارها"],
         ["↩️ بازگشت به منو اصلی"],
       ]).resize()
-    );
-  });
-
-  bot.hears("📋 لیست دستورات", (ctx) => {
-    ctx.reply(
-      "برای دیدن دستورات ربات، از دکمه آبی‌رنگ 📋 (Command Menu) گوشه پایین چپ استفاده کنید!"
     );
   });
 
@@ -366,7 +472,6 @@ function attachCommands(bot) {
         ["🌍 نمای کلی بازار"],
         ["📊 واچ‌لیست قیمتی"],
         ["🔔 هشدار قیمتی"],
-        ["📋 لیست دستورات"],
       ]).resize()
     );
   }
