@@ -103,7 +103,15 @@ function attachCommands(bot) {
           ],
         },
       });
-      sendWatchlistMenu(ctx);
+      ctx.reply(
+        "لطفا یک گزینه را انتخاب کنید:",
+        Markup.keyboard([
+          ["💵 قیمت تتر"],
+          ["➕ اضافه کردن ارز جدید"],
+          ["➖ حذف ارز از واچ‌لیست"],
+          ["↩️ بازگشت به منو اصلی"],
+        ]).resize()
+      );
     } catch (error) {
       ctx.reply(
         "❌ مشکلی در دریافت واچ‌لیست پیش آمد، لطفاً بعداً امتحان کنید."
@@ -199,20 +207,13 @@ function attachCommands(bot) {
     })
   );
 
-  bot.hears("🔮 پیش‌بینی قیمت", (ctx) => {
+  bot.hears("🔮 پیش‌بینی قیمت", (ctx) =>
     ctx.reply(
-      "📈 برای پیش‌بینی قیمت، نام ارز را وارد کنید:\n" +
+      "لطفاً نام ارز را برای پیش‌بینی قیمت وارد کنید:\n" +
         "مثال: `bitcoin` یا `notcoin`",
-      {
-        reply_markup: {
-          keyboard: [[{ text: "↩️ بازگشت به منو اصلی" }]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-        parse_mode: "Markdown",
-      }
-    );
-  });
+      { reply_markup: { force_reply: true } }
+    )
+  );
 
   bot.on("message", async (ctx) => {
     const text = ctx.message.text;
@@ -250,7 +251,15 @@ function attachCommands(bot) {
             "❌ ارز درخواستی یافت نشد. لطفاً نماد یا نام ارز را بررسی کنید."
           );
         }
-        sendWatchlistMenu(ctx); // بازگشت به منوی واچ‌لیست
+        ctx.reply(
+          "لطفا یک گزینه را انتخاب کنید:",
+          Markup.keyboard([
+            ["💵 قیمت تتر"],
+            ["➕ اضافه کردن ارز جدید"],
+            ["➖ حذف ارز از واچ‌لیست"],
+            ["↩️ بازگشت به منو اصلی"],
+          ]).resize()
+        );
       } catch (error) {
         ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
       }
@@ -267,9 +276,7 @@ function attachCommands(bot) {
         !global.userWatchlists[userId] ||
         !global.userWatchlists[userId].includes(coinToRemove)
       ) {
-        ctx.reply("❌ این ارز در واچ‌لیست شما نیست!");
-        sendWatchlistMenu(ctx);
-        return;
+        return ctx.reply("❌ این ارز در واچ‌لیست شما نیست!");
       }
 
       global.userWatchlists[userId] = global.userWatchlists[userId].filter(
@@ -289,7 +296,15 @@ function attachCommands(bot) {
         },
       });
 
-      sendWatchlistMenu(ctx); // بازگشت به منوی واچ‌لیست
+      ctx.reply(
+        "لطفا یک گزینه را انتخاب کنید:",
+        Markup.keyboard([
+          ["💵 قیمت تتر"],
+          ["➕ اضافه کردن ارز جدید"],
+          ["➖ حذف ارز از واچ‌لیست"],
+          ["↩️ بازگشت به منو اصلی"],
+        ]).resize()
+      );
     }
 
     // ثبت هشدار جدید
@@ -344,68 +359,39 @@ function attachCommands(bot) {
       }
     }
 
-    // پیش‌بینی قیمت پیشرفته‌تر با نمودار
+    // پیش‌بینی قیمت
     else if (
       ctx.message.reply_to_message?.text.includes(
         "لطفاً نام ارز را برای پیش‌بینی قیمت"
       )
     ) {
-      if (text === "↩️ بازگشت به منو اصلی") {
-        return sendMainMenu(ctx);
-      }
-
       const coin = text.toLowerCase();
       try {
-        const [history, currentData] = await Promise.all([
-          getPriceHistory(coin),
-          getWatchlistData([coin]),
-        ]);
-
-        if (!history || history.length < 7 || !currentData[0]) {
+        const history = await getPriceHistory(coin);
+        if (!history || history.length < 7) {
           return ctx.reply("❌ داده کافی برای پیش‌بینی این ارز در دسترس نیست!");
         }
 
-        // محاسبه میانگین متحرک ساده (SMA) و تحلیل
-        const prices = history.map((entry) => entry[1]);
-        const sma7 =
-          prices.slice(-7).reduce((sum, price) => sum + price, 0) / 7;
-        const sma14 =
-          prices.slice(-14).reduce((sum, price) => sum + price, 0) / 14;
-        const currentPrice = currentData[0].current_price;
-        const priceChange24h = currentData[0].price_change_percentage_24h;
-        const trend = currentPrice > sma7 && sma7 > sma14 ? "صعودی" : "نزولی";
-        const confidence = Math.abs(
-          ((currentPrice - sma7) / sma7) * 100
-        ).toFixed(2); // درصد اطمینان ساده
+        // محاسبه میانگین متحرک ساده (SMA) برای 7 روز
+        const prices = history.map((entry) => entry[1]); // قیمت‌ها (ستون دوم)
+        const sma = prices.slice(-7).reduce((sum, price) => sum + price, 0) / 7;
+        const currentPrice = prices[prices.length - 1];
+        const trend = currentPrice > sma ? "صعودی" : "نزولی";
 
         let message = "🔮 **پیش‌بینی قیمت**:\n\n";
-        message += `ارز: *${currentData[0].name}*\n`;
+        message += `ارز: *${coin.charAt(0).toUpperCase() + coin.slice(1)}*\n`;
         message += `💰 قیمت فعلی: ${currentPrice.toLocaleString("en-US", {
           minimumFractionDigits: 4,
         })} دلار\n`;
-        message += `📊 میانگین 7 روزه: ${sma7.toLocaleString("en-US", {
+        message += `📊 میانگین 7 روزه: ${sma.toLocaleString("en-US", {
           minimumFractionDigits: 4,
         })} دلار\n`;
-        message += `📊 میانگین 14 روزه: ${sma14.toLocaleString("en-US", {
-          minimumFractionDigits: 4,
-        })} دلار\n`;
-        message += `📈 تغییرات 24 ساعته: ${
-          priceChange24h >= 0 ? "+" : ""
-        }${priceChange24h.toFixed(2)}%\n`;
-        message += `🔍 روند پیش‌بینی‌شده: *${trend}*\n`;
-        message += `📉 اطمینان تقریبی: ${confidence}%\n`;
+        message += `📈 روند پیش‌بینی‌شده: *${trend}*\n`;
         message +=
-          "\n⚠️ *توجه*: این تحلیل ساده‌ست و صرفاً جهت اطلاعه، نه توصیه مالی!";
+          "\n⚠️ *توجه*: این فقط یه تحلیل ساده‌ست و نباید به‌عنوان توصیه مالی استفاده بشه!";
 
-        // ساخت نمودار با QuickChart
-        const chartUrl = `https://quickchart.io/chart?c={type:'line',data:{labels:${JSON.stringify(
-          prices.slice(-7).map((_, i) => `Day ${i + 1}`)
-        )},datasets:[{label:'${currentData[0].name}',data:${JSON.stringify(
-          prices.slice(-7)
-        )},fill:false,borderColor:'blue'}]}}`;
-
-        await ctx.reply(message, { parse_mode: "Markdown" });
-        await ctx.replyWithPhoto(chartUrl);
+        ctx.reply(message, { parse_mode: "Markdown" });
+        sendMainMenu(ctx);
       } catch (error) {
         ctx.reply("❌ خطایی رخ داد یا ارز پیدا نشد. لطفاً دوباره تلاش کنید.");
       }
@@ -431,18 +417,6 @@ function attachCommands(bot) {
         ["📜 لیست هشدارها"],
         ["🔔 ثبت هشدار جدید"],
         ["🗑️ پاک کردن هشدارها"],
-        ["↩️ بازگشت به منو اصلی"],
-      ]).resize()
-    );
-  }
-
-  function sendWatchlistMenu(ctx) {
-    ctx.reply(
-      "لطفا یک گزینه را انتخاب کنید:",
-      Markup.keyboard([
-        ["💵 قیمت تتر"],
-        ["➕ اضافه کردن ارز جدید"],
-        ["➖ حذف ارز از واچ‌لیست"],
         ["↩️ بازگشت به منو اصلی"],
       ]).resize()
     );
