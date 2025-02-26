@@ -103,7 +103,7 @@ function attachCommands(bot) {
           ],
         },
       });
-      sendWatchlistMenu(ctx); // استفاده از تابع جدید
+      sendWatchlistMenu(ctx);
     } catch (error) {
       ctx.reply(
         "❌ مشکلی در دریافت واچ‌لیست پیش آمد، لطفاً بعداً امتحان کنید."
@@ -217,10 +217,11 @@ function attachCommands(bot) {
 
   bot.hears("🔮 پیش‌بینی قیمت", (ctx) => {
     ctx.reply(
-      "📈 برای پیش‌بینی قیمت، نام ارز را وارد کنید:\n" +
+      "لطفاً نام ارز را برای پیش‌بینی قیمت وارد کنید:\n" +
         "مثال: `bitcoin` یا `notcoin`",
       {
         reply_markup: {
+          force_reply: true,
           keyboard: [[{ text: "❌ انصراف" }]],
           resize_keyboard: true,
           one_time_keyboard: true,
@@ -266,7 +267,7 @@ function attachCommands(bot) {
             "❌ ارز درخواستی یافت نشد. لطفاً نماد یا نام ارز را بررسی کنید."
           );
         }
-        sendWatchlistMenu(ctx); // بازگشت به منوی واچ‌لیست
+        sendWatchlistMenu(ctx);
       } catch (error) {
         ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
       }
@@ -305,7 +306,7 @@ function attachCommands(bot) {
         },
       });
 
-      sendWatchlistMenu(ctx); // بازگشت به منوی واچ‌لیست
+      sendWatchlistMenu(ctx);
     }
 
     // ثبت هشدار جدید
@@ -375,7 +376,16 @@ function attachCommands(bot) {
       )
     ) {
       if (text === "❌ انصراف") {
-        return sendMainMenu(ctx);
+        ctx.reply(
+          "لطفاً از منوی زیر استفاده کنید:",
+          Markup.keyboard([
+            ["🌍 نمای کلی بازار"],
+            ["📊 واچ‌لیست قیمتی"],
+            ["🔔 هشدار قیمتی"],
+            ["🔮 پیش‌بینی قیمت"],
+          ]).resize()
+        );
+        return;
       }
 
       const coin = text.toLowerCase();
