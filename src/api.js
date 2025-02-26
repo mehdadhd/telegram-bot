@@ -63,6 +63,18 @@ async function getTopGainersAndLosers() {
   }
 }
 
+async function getPriceHistory(coin) {
+  try {
+    const response = await axios.get(
+      `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=7&interval=daily`
+    );
+    return response.data.prices; // لیست قیمت‌ها برای 7 روز گذشته
+  } catch (error) {
+    console.error("خطا در دریافت تاریخچه قیمت:", error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   isUserMember,
   getWatchlistData,
@@ -70,4 +82,5 @@ module.exports = {
   getTetherPrice,
   getFearGreedIndex,
   getTopGainersAndLosers,
+  getPriceHistory,
 };
