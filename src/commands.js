@@ -83,15 +83,71 @@ function attachCommands(bot) {
     }
   });
 
-  // هشدار قیمتی
+  // منوی هشدار قیمتی
   bot.hears("🔔 هشدار قیمتی", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
-
     ctx.reply(
-      "لطفاً اطلاعات هشدار را وارد کنید:\nمثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n(ارز، قیمت هدف، نوع: above/below)",
-      { reply_markup: { force_reply: true } }
+      "📢 منوی هشدار قیمتی:\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
+      Markup.keyboard([
+        ["📜 لیست هشدارها"],
+        ["🔔 ثبت هشدار جدید"],
+        ["🗑️ پاک کردن هشدارها"],
+        ["↩️ بازگشت به منو اصلی"],
+      ]).resize()
     );
+  });
+
+  // لیست هشدارها
+  bot.hears("📜 لیست هشدارها", async (ctx) => {
+    const userId = ctx.from.id;
+    const userAlerts = global.priceAlerts.filter(
+      (alert) => alert.userId === userId
+    );
+    if (userAlerts.length === 0) {
+      return ctx.reply("❌ شما هنوز هشداری ثبت نکرده‌اید!");
+    }
+
+    let message = "📜 **لیست هشدارهای شما**:\n\n";
+    userAlerts.forEach((alert, index) => {
+      message += `${index + 1}. ارز: *${alert.coin}*\n`;
+      message += `   💰 قیمت هدف: ${alert.targetPrice} دلار\n`;
+      message += `   🔔 نوع: ${
+        alert.type === "above" ? "بالاتر از" : "پایین‌تر از"
+      }\n`;
+      message += "─".repeat(20) + "\n";
+    });
+    ctx.reply(message, { parse_mode: "Markdown" });
+  });
+
+  // ثبت هشدار جدید
+  bot.hears("🔔 ثبت هشدار جدید", async (ctx) => {
+    ctx.reply(
+      "لطفاً اطلاعات هشدار را وارد کنید:\n" +
+        "فرمت: `ارز قیمت نوع`\n" +
+        "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n" +
+        "📝 توضیح:\n" +
+        "- `above`: وقتی قیمت بالاتر از هدف برسه\n" +
+        "- `below`: وقتی قیمت پایین‌تر از هدف برسه",
+      { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
+    );
+  });
+
+  // پاک کردن هشدارها
+  bot.hears("🗑️ پاک کردن هشدارها", async (ctx) => {
+    const userId = ctx.from.id;
+    const initialLength = global.priceAlerts.length;
+    global.priceAlerts = global.priceAlerts.filter(
+      (alert) => alert.userId !== userId
+    );
+    const removedCount = initialLength - global.priceAlerts.length;
+
+    if (removedCount > 0) {
+      ctx.reply(`🗑️ ${removedCount} هشدار شما با موفقیت پاک شد!`);
+    } else {
+      ctx.reply("❌ شما هشداری برای پاک کردن ندارید!");
+    }
+    sendAlertMenu(ctx);
   });
 
   bot.hears("💵 قیمت تتر", async (ctx) => {
@@ -157,7 +213,7 @@ function attachCommands(bot) {
       }
     }
 
-    // پردازش هشدار قیمتی
+    // پردازش ثبت هشدار جدید
     else if (
       ctx.message.reply_to_message?.text.includes(
         "لطفاً اطلاعات هشدار را وارد کنید"
@@ -166,13 +222,17 @@ function attachCommands(bot) {
       const [coin, targetPriceStr, type] = text.split(" ");
       if (!coin || !targetPriceStr || !["above", "below"].includes(type)) {
         return ctx.reply(
-          "❌ فرمت اشتباه! مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`"
+          "❌ فرمت اشتباه!\n" +
+            "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n" +
+            "- `above`: هشدار برای وقتی قیمت بالاتر از هدف برسه\n" +
+            "- `below`: هشدار برای وقتی قیمت پایین‌تر از هدف برسه",
+          { parse_mode: "Markdown" }
         );
       }
 
       const targetPrice = parseFloat(targetPriceStr);
       if (isNaN(targetPrice)) {
-        return ctx.reply("❌ قیمت باید عدد باشد!");
+        return ctx.reply("❌ قیمت باید عدد باشد! مثال: `bitcoin 70000 above`");
       }
 
       try {
@@ -189,15 +249,13 @@ function attachCommands(bot) {
         });
 
         ctx.reply(
-          `✅ هشدار قیمتی ثبت شد!\nارز: ${coin}\nقیمت هدف: ${targetPrice} دلار\nنوع: ${
-            type === "above" ? "بالاتر از" : "پایین‌تر از"
-          }`,
-          Markup.keyboard([
-            ["🌍 نمای کلی بازار"],
-            ["📊 واچ‌لیست قیمتی"],
-            ["🔔 هشدار قیمتی"],
-          ]).resize()
+          `✅ هشدار قیمتی ثبت شد!\n` +
+            `ارز: *${coin}*\n` +
+            `قیمت هدف: ${targetPrice} دلار\n` +
+            `نوع: ${type === "above" ? "بالاتر از" : "پایین‌تر از"}`,
+          { parse_mode: "Markdown" }
         );
+        sendAlertMenu(ctx);
       } catch (error) {
         ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
       }
@@ -211,6 +269,18 @@ function attachCommands(bot) {
         ["🌍 نمای کلی بازار"],
         ["📊 واچ‌لیست قیمتی"],
         ["🔔 هشدار قیمتی"],
+      ]).resize()
+    );
+  }
+
+  function sendAlertMenu(ctx) {
+    ctx.reply(
+      "📢 منوی هشدار قیمتی:\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
+      Markup.keyboard([
+        ["📜 لیست هشدارها"],
+        ["🔔 ثبت هشدار جدید"],
+        ["🗑️ پاک کردن هشدارها"],
+        ["↩️ بازگشت به منو اصلی"],
       ]).resize()
     );
   }

@@ -20,7 +20,7 @@ function startBot() {
   setInterval(async () => {
     if (global.priceAlerts.length === 0) return;
 
-    const allCoins = [...new Set(global.priceAlerts.map(alert => alert.coin))]; // لیست منحصربه‌فرد ارزها
+    const allCoins = [...new Set(global.priceAlerts.map(alert => alert.coin))];
     try {
       const watchlistData = await getWatchlistData(allCoins);
       global.priceAlerts.forEach((alert, index) => {
@@ -39,7 +39,6 @@ function startBot() {
             `🔔 هشدار قیمتی!\nارز: *${coinData.name}*\nقیمت فعلی: ${currentPrice.toLocaleString()} دلار\nبه هدف ${type === "above" ? "بالاتر از" : "پایین‌تر از"} ${targetPrice} دلار رسید!`,
             { parse_mode: "Markdown" }
           );
-          // حذف هشدار بعد از ارسال
           global.priceAlerts.splice(index, 1);
         }
       });
@@ -48,7 +47,6 @@ function startBot() {
     }
   }, 5 * 60 * 1000); // هر 5 دقیقه
 
-  // راه‌اندازی ربات
   bot.launch();
   console.log("ربات با موفقیت راه‌اندازی شد!");
 }
