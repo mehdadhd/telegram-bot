@@ -7,24 +7,22 @@ const { getWatchlistData } = require("./api");
 function startBot() {
   const bot = new Telegraf(BOT_TOKEN);
 
-  // لیست ارزهای اضافه شده توسط کاربران
-  global.userAddedCoins = [];
-  // لیست هشدارهای قیمتی
+  global.userWatchlists = {}; // واچ‌لیست شخصی برای هر کاربر
   global.priceAlerts = [];
 
-  // اتصال هندلرها
   attachCommands(bot);
   attachActions(bot);
 
-  // چک کردن هشدارها هر 5 دقیقه
   setInterval(async () => {
     if (global.priceAlerts.length === 0) return;
 
-    const allCoins = [...new Set(global.priceAlerts.map(alert => alert.coin))];
+    const allCoins = [
+      ...new Set(global.priceAlerts.map((alert) => alert.coin)),
+    ];
     try {
       const watchlistData = await getWatchlistData(allCoins);
       global.priceAlerts.forEach((alert, index) => {
-        const coinData = watchlistData.find(c => c.id === alert.coin);
+        const coinData = watchlistData.find((c) => c.id === alert.coin);
         if (!coinData) return;
 
         const currentPrice = coinData.current_price;
@@ -36,7 +34,11 @@ function startBot() {
         ) {
           bot.telegram.sendMessage(
             userId,
-            `🔔 هشدار قیمتی!\nارز: *${coinData.name}*\nقیمت فعلی: ${currentPrice.toLocaleString()} دلار\nبه هدف ${type === "above" ? "بالاتر از" : "پایین‌تر از"} ${targetPrice} دلار رسید!`,
+            `🔔 هشدار قیمتی!\nارز: *${
+              coinData.name
+            }*\nقیمت فعلی: ${currentPrice.toLocaleString()} دلار\nبه هدف ${
+              type === "above" ? "بالاتر از" : "پایین‌تر از"
+            } ${targetPrice} دلار رسید!`,
             { parse_mode: "Markdown" }
           );
           global.priceAlerts.splice(index, 1);
@@ -45,7 +47,7 @@ function startBot() {
     } catch (error) {
       console.error("خطا در چک کردن هشدارها:", error.message);
     }
-  }, 5 * 60 * 1000); // هر 5 دقیقه
+  }, 5 * 60 * 1000);
 
   bot.launch();
   console.log("ربات با موفقیت راه‌اندازی شد!");
