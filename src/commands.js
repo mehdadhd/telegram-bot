@@ -7,7 +7,6 @@ const {
   getWatchlistData,
   getFearGreedIndex,
   getTopGainersAndLosers,
-  getPriceHistory,
 } = require("./api");
 
 function attachCommands(bot) {
@@ -125,6 +124,12 @@ function attachCommands(bot) {
     );
   });
 
+  bot.hears("📋 لیست دستورات", (ctx) => {
+    ctx.reply(
+      "برای دیدن دستورات ربات، از دکمه آبی‌رنگ 📋 (Command Menu) گوشه پایین چپ استفاده کنید!"
+    );
+  });
+
   bot.hears("📜 لیست هشدارها", async (ctx) => {
     const userId = ctx.from.id;
     const userAlerts = global.priceAlerts.filter(
@@ -214,22 +219,6 @@ function attachCommands(bot) {
       reply_markup: { force_reply: true },
     })
   );
-
-  bot.hears("🔮 پیش‌بینی قیمت", (ctx) => {
-    ctx.reply(
-      "لطفاً نام ارز را برای پیش‌بینی قیمت وارد کنید:\n" +
-        "مثال: `bitcoin` یا `notcoin`",
-      {
-        reply_markup: {
-          force_reply: true,
-          keyboard: [[{ text: "❌ انصراف" }]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-        parse_mode: "Markdown",
-      }
-    );
-  });
 
   bot.on("message", async (ctx) => {
     const text = ctx.message.text;
@@ -368,56 +357,6 @@ function attachCommands(bot) {
         ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
       }
     }
-
-    // پیش‌بینی قیمت ساده
-    else if (
-      ctx.message.reply_to_message?.text.includes(
-        "لطفاً نام ارز را برای پیش‌بینی قیمت"
-      )
-    ) {
-      if (text === "❌ انصراف") {
-        ctx.reply(
-          "لطفاً از منوی زیر استفاده کنید:",
-          Markup.keyboard([
-            ["🌍 نمای کلی بازار"],
-            ["📊 واچ‌لیست قیمتی"],
-            ["🔔 هشدار قیمتی"],
-            ["🔮 پیش‌بینی قیمت"],
-          ]).resize()
-        );
-        return;
-      }
-
-      const coin = text.toLowerCase();
-      try {
-        const history = await getPriceHistory(coin);
-        if (!history || history.length < 7) {
-          return ctx.reply("❌ داده کافی برای پیش‌بینی این ارز در دسترس نیست!");
-        }
-
-        const prices = history.map((entry) => entry[1]);
-        const sma = prices.slice(-7).reduce((sum, price) => sum + price, 0) / 7;
-        const currentPrice = prices[prices.length - 1];
-        const trend = currentPrice > sma ? "صعودی" : "نزولی";
-
-        let message = "🔮 **پیش‌بینی قیمت**:\n\n";
-        message += `ارز: *${coin.charAt(0).toUpperCase() + coin.slice(1)}*\n`;
-        message += `💰 قیمت فعلی: ${currentPrice.toLocaleString("en-US", {
-          minimumFractionDigits: 4,
-        })} دلار\n`;
-        message += `📊 میانگین 7 روزه: ${sma.toLocaleString("en-US", {
-          minimumFractionDigits: 4,
-        })} دلار\n`;
-        message += `📈 روند پیش‌بینی‌شده: *${trend}*\n`;
-        message +=
-          "\n⚠️ *توجه*: این فقط یه تحلیل ساده‌ست و نباید به‌عنوان توصیه مالی استفاده بشه!";
-
-        ctx.reply(message, { parse_mode: "Markdown" });
-        sendMainMenu(ctx);
-      } catch (error) {
-        ctx.reply("❌ خطایی رخ داد یا ارز پیدا نشد. لطفاً دوباره تلاش کنید.");
-      }
-    }
   });
 
   function sendMainMenu(ctx) {
@@ -427,7 +366,7 @@ function attachCommands(bot) {
         ["🌍 نمای کلی بازار"],
         ["📊 واچ‌لیست قیمتی"],
         ["🔔 هشدار قیمتی"],
-        ["🔮 پیش‌بینی قیمت"],
+        ["📋 لیست دستورات"],
       ]).resize()
     );
   }
