@@ -2,16 +2,51 @@ const { Telegraf } = require("telegraf");
 const { BOT_TOKEN } = require("../config");
 const { attachCommands } = require("./commands");
 const { attachActions } = require("./actions");
+const { getWatchlistData } = require("./api");
 
 function startBot() {
   const bot = new Telegraf(BOT_TOKEN);
 
   // لیست ارزهای اضافه شده توسط کاربران
   global.userAddedCoins = [];
+  // لیست هشدارهای قیمتی
+  global.priceAlerts = [];
 
   // اتصال هندلرها
   attachCommands(bot);
   attachActions(bot);
+
+  // چک کردن هشدارها هر 5 دقیقه
+  setInterval(async () => {
+    if (global.priceAlerts.length === 0) return;
+
+    const allCoins = [...new Set(global.priceAlerts.map(alert => alert.coin))]; // لیست منحصربه‌فرد ارزها
+    try {
+      const watchlistData = await getWatchlistData(allCoins);
+      global.priceAlerts.forEach((alert, index) => {
+        const coinData = watchlistData.find(c => c.id === alert.coin);
+        if (!coinData) return;
+
+        const currentPrice = coinData.current_price;
+        const { userId, targetPrice, type } = alert;
+
+        if (
+          (type === "above" && currentPrice >= targetPrice) ||
+          (type === "below" && currentPrice <= targetPrice)
+        ) {
+          bot.telegram.sendMessage(
+            userId,
+            `🔔 هشدار قیمتی!\nارز: *${coinData.name}*\nقیمت فعلی: ${currentPrice.toLocaleString()} دلار\nبه هدف ${type === "above" ? "بالاتر از" : "پایین‌تر از"} ${targetPrice} دلار رسید!`,
+            { parse_mode: "Markdown" }
+          );
+          // حذف هشدار بعد از ارسال
+          global.priceAlerts.splice(index, 1);
+        }
+      });
+    } catch (error) {
+      console.error("خطا در چک کردن هشدارها:", error.message);
+    }
+  }, 5 * 60 * 1000); // هر 5 دقیقه
 
   // راه‌اندازی ربات
   bot.launch();
