@@ -68,14 +68,15 @@ async function getTopGainersAndLosers() {
 async function getGoldAndCoinPrices() {
   try {
     const response = await axios.get("https://api.navasan.tech/latest", {
-      params: { api_key: "freemHJDIZZKzELPq5dncIfCXeXjtjv6" }, // اینجا کلید API خودت رو بذار
+      params: { api_key: "freemHJDIZZKzELPq5dncIfCXeXjtjv6" }, // کلید API خودت رو بذار
     });
     const data = response.data;
+    console.log("Raw API response for gold and coins:", data); // لاگ برای دیباگ
     return {
-      goldGram: parseInt(data["geram18"]["value"]), // یک گرم طلای 18 عیار
-      fullCoin: parseInt(data["sekee"]["value"]), // سکه تمام بهار
-      halfCoin: parseInt(data["nim"]["value"]), // نیم سکه
-      quarterCoin: parseInt(data["rob"]["value"]), // ربع سکه
+      goldGram: parseInt(data["geram18"]["value"]),
+      fullCoin: parseInt(data["sekee"]["value"]),
+      halfCoin: parseInt(data["nim"]["value"]),
+      quarterCoin: parseInt(data["rob"]["value"]),
     };
   } catch (error) {
     console.error("خطا در دریافت قیمت سکه و طلا:", error.message);
@@ -86,10 +87,11 @@ async function getGoldAndCoinPrices() {
 async function getDollarPrice() {
   try {
     const response = await axios.get("https://api.navasan.tech/latest", {
-      params: { api_key: "freemHJDIZZKzELPq5dncIfCXeXjtjv6" }, // اینجا کلید API خودت رو بذار
+      params: { api_key: "freemHJDIZZKzELPq5dncIfCXeXjtjv6" }, // کلید API خودت رو بذار
     });
     const data = response.data;
-    return parseInt(data["usd"]["value"]); // قیمت دلار نقدی
+    console.log("Raw API response for dollar:", data); // لاگ برای دیباگ
+    return parseInt(data["usd"]["value"]);
   } catch (error) {
     console.error("خطا در دریافت قیمت دلار:", error.message);
     throw error;
