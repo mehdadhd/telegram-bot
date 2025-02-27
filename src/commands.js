@@ -49,7 +49,7 @@ function attachCommands(bot) {
       }${marketCapChange}%\n`;
 
       ctx.reply(message, { parse_mode: "Markdown" });
-      sendMarketMenu(ctx); // باز کردن منوی دوم نمای کلی بازار
+      sendMarketMenu(ctx);
     } catch (error) {
       ctx.reply(
         "❌ مشکلی در دریافت اطلاعات بازار پیش آمد، لطفاً بعداً امتحان کنید."
@@ -87,7 +87,6 @@ function attachCommands(bot) {
     sendAlertMenu(ctx);
   });
 
-  // منوی دوم نمای کلی بازار
   bot.hears("😨 شاخص ترس و طمع", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -96,13 +95,14 @@ function attachCommands(bot) {
       if (fearGreed) {
         const value = fearGreed.value;
         const classification = fearGreed.value_classification;
-        ctx.reply(`😨 **شاخص ترس و طمع**: ${value} (${classification})`, {
-          parse_mode: "Markdown",
-        });
+        ctx.reply(
+          `😨 **شاخص ترس و طمع کریپتو**: ${value} (${classification})`,
+          { parse_mode: "Markdown" }
+        );
       } else {
         ctx.reply("😨 شاخص ترس و طمع: در دسترس نیست");
       }
-      sendMarketMenu(ctx); // بازگشت به منوی دوم
+      sendMarketMenu(ctx);
     } catch (error) {
       ctx.reply(
         "❌ مشکلی در دریافت شاخص ترس و طمع پیش آمد، لطفاً بعداً امتحان کنید."
@@ -114,12 +114,13 @@ function attachCommands(bot) {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
     try {
-      const topData = await getTopGainersAndLosers();
-      const coins = topData.response.data;
-      const topGainers = coins.slice(0, 5); // 5 ارز با بیشترین رشد
-      const topLosers = coins.slice(-5).reverse(); // 5 ارز با بیشترین ضرر
+      const data = await getTopGainersAndLosers();
+      if (!data) throw new Error("داده‌ها در دسترس نیست");
 
-      let message = "📈 **برترین‌ها و بازندگان (24h)**:\n\n";
+      const topGainers = data.topGainers;
+      const topLosers = data.topLosers;
+
+      let message = "📈 **برترین‌ها و بازندگان بازار (24h)**:\n\n";
       message += "🚀 **5 ارز با بیشترین رشد**:\n";
       topGainers.forEach((coin, index) => {
         message += `${index + 1}. *${
@@ -134,7 +135,7 @@ function attachCommands(bot) {
       });
 
       ctx.reply(message, { parse_mode: "Markdown" });
-      sendMarketMenu(ctx); // بازگشت به منوی دوم
+      sendMarketMenu(ctx);
     } catch (error) {
       ctx.reply(
         "❌ مشکلی در دریافت برترین‌ها و بازندگان پیش آمد، لطفاً بعداً امتحان کنید."

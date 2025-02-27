@@ -17,16 +17,10 @@ async function getWatchlistData(coins) {
     const response = await axios.get(
       `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinList}&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h`
     );
-    const data = response.data;
-    // چک کردن اینکه آیا Notcoin توی داده‌ها هست یا نه
-    const notcoinData = data.find(coin => coin.id === "notcoin");
-    if (!notcoinData) {
-      console.log("هشدار: Notcoin توی داده‌های API پیدا نشد!");
-    }
-    return data;
+    return response.data;
   } catch (error) {
     console.error("خطا در دریافت داده‌های واچ‌لیست:", error.message);
-    throw error; // خطا رو به بالا پرت می‌کنه تا توی ربات مدیریت بشه
+    throw error;
   }
 }
 
@@ -42,4 +36,38 @@ async function getTetherPrice() {
   return tetherData.price / 10;
 }
 
-module.exports = { isUserMember, getWatchlistData, getMarketOverview, getTetherPrice };
+async function getFearGreedIndex() {
+  try {
+    const response = await axios.get("https://api.alternative.me/fng/?limit=1");
+    return response.data.data[0];
+  } catch (error) {
+    console.error("خطا در دریافت شاخص ترس و طمع:", error.message);
+    return null;
+  }
+}
+
+async function getTopGainersAndLosers() {
+  try {
+    const response = await axios.get(
+      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h"
+    );
+    const coins = response.data;
+    coins.sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h);
+    return {
+      topGainers: coins.slice(0, 5), // 5 ارز با بیشترین رشد
+      topLosers: coins.slice(-5).reverse(), // 5 ارز با بیشترین ضرر
+    };
+  } catch (error) {
+    console.error("خطا در دریافت برترین رشد و ریزش:", error.message);
+    return null;
+  }
+}
+
+module.exports = {
+  isUserMember,
+  getWatchlistData,
+  getMarketOverview,
+  getTetherPrice,
+  getFearGreedIndex,
+  getTopGainersAndLosers,
+};
