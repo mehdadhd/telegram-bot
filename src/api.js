@@ -52,7 +52,9 @@ async function getTopGainersAndLosers() {
       "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h"
     );
     const coins = response.data;
-    coins.sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h);
+    coins.sort(
+      (a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h
+    );
     return {
       topGainers: coins.slice(0, 5),
       topLosers: coins.slice(-5).reverse(),
@@ -66,7 +68,7 @@ async function getTopGainersAndLosers() {
 async function getGoldAndCoinPrices() {
   try {
     const response = await axios.get("https://api.navasan.tech/latest", {
-      params: { api_key: "YOUR_API_KEY_HERE" } // اینجا کلید API خودت رو بذار
+      params: { api_key: "freemHJDIZZKzELPq5dncIfCXeXjtjv6" }, // اینجا کلید API خودت رو بذار
     });
     const data = response.data;
     return {
@@ -84,7 +86,7 @@ async function getGoldAndCoinPrices() {
 async function getDollarPrice() {
   try {
     const response = await axios.get("https://api.navasan.tech/latest", {
-      params: { api_key: "freemHJDIZZKzELPq5dncIfCXeXjtjv6" } // اینجا کلید API خودت رو بذار
+      params: { api_key: "freemHJDIZZKzELPq5dncIfCXeXjtjv6" }, // اینجا کلید API خودت رو بذار
     });
     const data = response.data;
     return parseInt(data["usd"]["value"]); // قیمت دلار نقدی
