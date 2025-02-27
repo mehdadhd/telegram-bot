@@ -326,11 +326,17 @@ function attachCommands(bot) {
 
     if (!ctx.message.reply_to_message) return; // فقط پیام‌های جواب پردازش بشن
 
+    console.log(
+      "Received message:",
+      text,
+      "in reply to:",
+      ctx.message.reply_to_message.text
+    );
+
     // اضافه کردن ارز جدید
     if (
-      ctx.message.reply_to_message.text.includes(
-        "لطفاً نماد یا نام ارز را وارد کنید"
-      )
+      ctx.message.reply_to_message.text ===
+      "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید:"
     ) {
       const newCoin = text.toLowerCase();
       try {
@@ -365,14 +371,14 @@ function attachCommands(bot) {
         sendWatchlistMenu(ctx);
       } catch (error) {
         ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
+        console.error("Error in adding coin:", error);
       }
     }
 
     // حذف ارز از واچ‌لیست
     else if (
-      ctx.message.reply_to_message.text.includes(
-        "لطفاً نام ارزی که می‌خواهید حذف کنید"
-      )
+      ctx.message.reply_to_message.text ===
+      "لطفاً نام ارزی که می‌خواهید حذف کنید را وارد کنید:"
     ) {
       const coinToRemove = text.toLowerCase();
       if (
@@ -406,16 +412,28 @@ function attachCommands(bot) {
 
     // ثبت هشدار جدید
     else if (
-      ctx.message.reply_to_message.text.includes(
+      ctx.message.reply_to_message.text.startsWith(
         "لطفاً اطلاعات هشدار را وارد کنید"
       )
     ) {
+      console.log("Processing alert input:", text);
       if (text === "↩️ بازگشت به منو اصلی") {
+        console.log("User chose to return to main menu");
         return sendMainMenu(ctx);
       }
 
       const [coin, targetPriceStr, type] = text.split(" ");
+      console.log(
+        "Parsed input - coin:",
+        coin,
+        "price:",
+        targetPriceStr,
+        "type:",
+        type
+      );
+
       if (!coin || !targetPriceStr || !["above", "below"].includes(type)) {
+        console.log("Invalid format detected");
         return ctx.reply(
           "❌ فرمت اشتباه!\n" +
             "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n" +
@@ -427,15 +445,19 @@ function attachCommands(bot) {
 
       const targetPrice = parseFloat(targetPriceStr);
       if (isNaN(targetPrice)) {
+        console.log("Invalid price detected");
         return ctx.reply("❌ قیمت باید عدد باشد! مثال: `bitcoin 70000 above`");
       }
 
       try {
+        console.log("Fetching coin data for:", coin);
         const coinCheck = await getWatchlistData([coin.toLowerCase()]);
         if (coinCheck.length === 0) {
+          console.log("Coin not found:", coin);
           return ctx.reply("❌ ارز درخواستی یافت نشد!");
         }
 
+        console.log("Saving alert:", { userId, coin, targetPrice, type });
         global.priceAlerts.push({
           userId,
           coin: coin.toLowerCase(),
@@ -443,6 +465,7 @@ function attachCommands(bot) {
           type,
         });
 
+        console.log("Alert saved successfully");
         ctx.reply(
           `✅ هشدار قیمتی ثبت شد!\n` +
             `ارز: *${coin}*\n` +
@@ -460,6 +483,7 @@ function attachCommands(bot) {
           ]).resize()
         );
       } catch (error) {
+        console.error("Error in saving alert:", error);
         ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
       }
     }
