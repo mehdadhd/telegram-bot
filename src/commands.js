@@ -324,8 +324,14 @@ function attachCommands(bot) {
     const text = ctx.message.text;
     const userId = ctx.from.id;
 
+    if (!ctx.message.reply_to_message) return; // فقط پیام‌های جواب پردازش بشن
+
     // اضافه کردن ارز جدید
-    if (ctx.message.reply_to_message?.text.includes("لطفاً نماد یا نام ارز")) {
+    if (
+      ctx.message.reply_to_message.text.includes(
+        "لطفاً نماد یا نام ارز را وارد کنید"
+      )
+    ) {
       const newCoin = text.toLowerCase();
       try {
         const coinCheck = await getWatchlistData([newCoin]);
@@ -364,7 +370,7 @@ function attachCommands(bot) {
 
     // حذف ارز از واچ‌لیست
     else if (
-      ctx.message.reply_to_message?.text.includes(
+      ctx.message.reply_to_message.text.includes(
         "لطفاً نام ارزی که می‌خواهید حذف کنید"
       )
     ) {
@@ -400,8 +406,9 @@ function attachCommands(bot) {
 
     // ثبت هشدار جدید
     else if (
-      ctx.message.reply_to_message?.text ===
-      "لطفاً اطلاعات هشدار را وارد کنید:\nفرمت: `ارز قیمت نوع`\nمثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n📝 توضیح:\n- `above`: وقتی قیمت بالاتر از هدف برسه\n- `below`: وقتی قیمت پایین‌تر از هدف برسه"
+      ctx.message.reply_to_message.text.includes(
+        "لطفاً اطلاعات هشدار را وارد کنید"
+      )
     ) {
       if (text === "↩️ بازگشت به منو اصلی") {
         return sendMainMenu(ctx);
@@ -412,8 +419,8 @@ function attachCommands(bot) {
         return ctx.reply(
           "❌ فرمت اشتباه!\n" +
             "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n" +
-            "- `above`: هشدار برای وقتی قیمت بالاتر از هدف برسه\n" +
-            "- `below`: هشدار برای وقتی قیمت پایین‌تر از هدف برسه",
+            "- `above`: وقتی قیمت بالاتر از هدف برسه\n" +
+            "- `below`: وقتی قیمت پایین‌تر از هدف برسه",
           { parse_mode: "Markdown" }
         );
       }
