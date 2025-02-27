@@ -7,16 +7,13 @@ const { getWatchlistData } = require("./api");
 function startBot() {
   const bot = new Telegraf(BOT_TOKEN);
 
-  // لیست ارزهای اضافه شده توسط کاربران
+  // تعریف متغیرهای جهانی
   global.userAddedCoins = [];
-  // لیست هشدارهای قیمتی
   global.priceAlerts = [];
 
-  // اتصال هندلرها
   attachCommands(bot);
   attachActions(bot);
 
-  // چک کردن هشدارها هر 5 دقیقه
   setInterval(async () => {
     if (global.priceAlerts.length === 0) return;
 
