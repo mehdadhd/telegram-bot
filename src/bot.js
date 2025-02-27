@@ -8,7 +8,7 @@ function startBot() {
   const bot = new Telegraf(BOT_TOKEN);
 
   // تعریف متغیرهای جهانی
-  global.userAddedCoins = [];
+  global.userWatchlists = {}; // واچ‌لیست شخصی برای هر کاربر
   global.priceAlerts = [];
 
   attachCommands(bot);
@@ -42,7 +42,7 @@ function startBot() {
     } catch (error) {
       console.error("خطا در چک کردن هشدارها:", error.message);
     }
-  }, 5 * 60 * 1000); // هر 5 دقیقه
+  }, 5 * 60 * 1000);
 
   bot.launch();
   console.log("ربات با موفقیت راه‌اندازی شد!");

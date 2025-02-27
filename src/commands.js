@@ -60,8 +60,10 @@ function attachCommands(bot) {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
     try {
-      const allCoins = [...BASE_COINS, ...global.userAddedCoins];
-      const watchlistData = await getWatchlistData(allCoins);
+      if (!global.userWatchlists[userId])
+        global.userWatchlists[userId] = [...BASE_COINS];
+      const userCoins = global.userWatchlists[userId];
+      const watchlistData = await getWatchlistData(userCoins);
       await ctx.reply(formatWatchlist(watchlistData), {
         parse_mode: "Markdown",
         reply_markup: {
@@ -162,7 +164,7 @@ function attachCommands(bot) {
     const text = ctx.message.text;
     const userId = ctx.from.id;
 
-    if (!ctx.message.reply_to_message) return; // فقط پیام‌های جواب پردازش بشن
+    if (!ctx.message.reply_to_message) return;
 
     console.log(
       "Received message:",
@@ -180,11 +182,14 @@ function attachCommands(bot) {
       try {
         const coinCheck = await getWatchlistData([newCoin]);
         if (coinCheck.length > 0) {
-          if (!global.userAddedCoins.includes(newCoin)) {
-            global.userAddedCoins.push(newCoin);
-            ctx.reply(`✅ ارز ${newCoin} به لیست اضافه شد.`);
-            const allCoins = [...BASE_COINS, ...global.userAddedCoins];
-            const watchlistData = await getWatchlistData(allCoins);
+          if (!global.userWatchlists[userId])
+            global.userWatchlists[userId] = [...BASE_COINS];
+          if (!global.userWatchlists[userId].includes(newCoin)) {
+            global.userWatchlists[userId].push(newCoin);
+            ctx.reply(`✅ ارز ${newCoin} به واچ‌لیست شما اضافه شد.`);
+            const watchlistData = await getWatchlistData(
+              global.userWatchlists[userId]
+            );
             await ctx.reply(formatWatchlist(watchlistData), {
               parse_mode: "Markdown",
               reply_markup: {
@@ -194,7 +199,7 @@ function attachCommands(bot) {
               },
             });
           } else {
-            ctx.reply(`❌ ارز ${newCoin} قبلاً در لیست وجود دارد.`);
+            ctx.reply(`❌ ارز ${newCoin} قبلاً در واچ‌لیست شما وجود دارد.`);
           }
         } else {
           ctx.reply(
@@ -214,19 +219,23 @@ function attachCommands(bot) {
       "لطفاً نام ارزی که می‌خواهید حذف کنید را وارد کنید:"
     ) {
       const coinToRemove = text.toLowerCase();
-      if (!global.userAddedCoins.includes(coinToRemove)) {
+      if (
+        !global.userWatchlists[userId] ||
+        !global.userWatchlists[userId].includes(coinToRemove)
+      ) {
         ctx.reply("❌ این ارز در واچ‌لیست شما نیست!");
         sendWatchlistMenu(ctx);
         return;
       }
 
-      global.userAddedCoins = global.userAddedCoins.filter(
+      global.userWatchlists[userId] = global.userWatchlists[userId].filter(
         (coin) => coin !== coinToRemove
       );
       ctx.reply(`✅ ارز ${coinToRemove} از واچ‌لیست شما حذف شد.`);
 
-      const allCoins = [...BASE_COINS, ...global.userAddedCoins];
-      const watchlistData = await getWatchlistData(allCoins);
+      const watchlistData = await getWatchlistData(
+        global.userWatchlists[userId]
+      );
       await ctx.reply(formatWatchlist(watchlistData), {
         parse_mode: "Markdown",
         reply_markup: {
