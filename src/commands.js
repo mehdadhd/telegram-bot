@@ -10,7 +10,6 @@ const {
 } = require("./api");
 
 function attachCommands(bot) {
-  // دستور /start
   bot.command("start", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) {
@@ -30,7 +29,6 @@ function attachCommands(bot) {
     sendMainMenu(ctx);
   });
 
-  // دستور /market
   bot.command("market", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -86,7 +84,6 @@ function attachCommands(bot) {
     }
   });
 
-  // دستور /watchlist
   bot.command("watchlist", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -113,7 +110,6 @@ function attachCommands(bot) {
     }
   });
 
-  // دستور /alerts
   bot.command("alerts", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -128,7 +124,6 @@ function attachCommands(bot) {
     );
   });
 
-  // دستور /tether
   bot.command("tether", async (ctx) => {
     try {
       const price = await getTetherPrice();
@@ -140,7 +135,6 @@ function attachCommands(bot) {
     }
   });
 
-  // دکمه‌های کیبورد
   bot.hears("🌍 نمای کلی بازار", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -406,9 +400,8 @@ function attachCommands(bot) {
 
     // ثبت هشدار جدید
     else if (
-      ctx.message.reply_to_message?.text.includes(
-        "لطفاً اطلاعات هشدار را وارد کنید"
-      )
+      ctx.message.reply_to_message?.text ===
+      "لطفاً اطلاعات هشدار را وارد کنید:\nفرمت: `ارز قیمت نوع`\nمثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n📝 توضیح:\n- `above`: وقتی قیمت بالاتر از هدف برسه\n- `below`: وقتی قیمت پایین‌تر از هدف برسه"
     ) {
       if (text === "↩️ بازگشت به منو اصلی") {
         return sendMainMenu(ctx);
@@ -419,8 +412,8 @@ function attachCommands(bot) {
         return ctx.reply(
           "❌ فرمت اشتباه!\n" +
             "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n" +
-            "- `above`: وقتی قیمت بالاتر از هدف برسه\n" +
-            "- `below`: وقتی قیمت پایین‌تر از هدف برسه",
+            "- `above`: هشدار برای وقتی قیمت بالاتر از هدف برسه\n" +
+            "- `below`: هشدار برای وقتی قیمت پایین‌تر از هدف برسه",
           { parse_mode: "Markdown" }
         );
       }
