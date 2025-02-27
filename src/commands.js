@@ -49,6 +49,7 @@ function attachCommands(bot) {
       }${marketCapChange}%\n`;
 
       ctx.reply(message, { parse_mode: "Markdown" });
+      sendMarketMenu(ctx); // باز کردن منوی دوم نمای کلی بازار
     } catch (error) {
       ctx.reply(
         "❌ مشکلی در دریافت اطلاعات بازار پیش آمد، لطفاً بعداً امتحان کنید."
@@ -85,6 +86,63 @@ function attachCommands(bot) {
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
     sendAlertMenu(ctx);
   });
+
+  // منوی دوم نمای کلی بازار
+  bot.hears("😨 شاخص ترس و طمع", async (ctx) => {
+    const userId = ctx.from.id;
+    if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
+    try {
+      const fearGreed = await getFearGreedIndex();
+      if (fearGreed) {
+        const value = fearGreed.value;
+        const classification = fearGreed.value_classification;
+        ctx.reply(`😨 **شاخص ترس و طمع**: ${value} (${classification})`, {
+          parse_mode: "Markdown",
+        });
+      } else {
+        ctx.reply("😨 شاخص ترس و طمع: در دسترس نیست");
+      }
+      sendMarketMenu(ctx); // بازگشت به منوی دوم
+    } catch (error) {
+      ctx.reply(
+        "❌ مشکلی در دریافت شاخص ترس و طمع پیش آمد، لطفاً بعداً امتحان کنید."
+      );
+    }
+  });
+
+  bot.hears("📈 برترین‌ها و بازندگان", async (ctx) => {
+    const userId = ctx.from.id;
+    if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
+    try {
+      const topData = await getTopGainersAndLosers();
+      const coins = topData.response.data;
+      const topGainers = coins.slice(0, 5); // 5 ارز با بیشترین رشد
+      const topLosers = coins.slice(-5).reverse(); // 5 ارز با بیشترین ضرر
+
+      let message = "📈 **برترین‌ها و بازندگان (24h)**:\n\n";
+      message += "🚀 **5 ارز با بیشترین رشد**:\n";
+      topGainers.forEach((coin, index) => {
+        message += `${index + 1}. *${
+          coin.name
+        }*: ${coin.price_change_percentage_24h.toFixed(2)}%\n`;
+      });
+      message += "\n📉 **5 ارز با بیشترین ضرر**:\n";
+      topLosers.forEach((coin, index) => {
+        message += `${index + 1}. *${
+          coin.name
+        }*: ${coin.price_change_percentage_24h.toFixed(2)}%\n`;
+      });
+
+      ctx.reply(message, { parse_mode: "Markdown" });
+      sendMarketMenu(ctx); // بازگشت به منوی دوم
+    } catch (error) {
+      ctx.reply(
+        "❌ مشکلی در دریافت برترین‌ها و بازندگان پیش آمد، لطفاً بعداً امتحان کنید."
+      );
+    }
+  });
+
+  bot.hears("↩️ بازگشت به منو اصلی", (ctx) => sendMainMenu(ctx));
 
   bot.hears("📜 لیست هشدارها", async (ctx) => {
     const userId = ctx.from.id;
@@ -135,19 +193,6 @@ function attachCommands(bot) {
     sendAlertMenu(ctx);
   });
 
-  bot.hears("💵 قیمت تتر", async (ctx) => {
-    try {
-      const price = await getTetherPrice();
-      ctx.reply(`💵 قیمت تتر (USDT): ${price.toLocaleString()} تومان`);
-    } catch (error) {
-      ctx.reply(
-        "❌ مشکلی در دریافت قیمت تتر پیش آمد، لطفاً بعداً امتحان کنید."
-      );
-    }
-  });
-
-  bot.hears("↩️ بازگشت به منو اصلی", (ctx) => sendMainMenu(ctx));
-
   bot.hears("➕ اضافه کردن ارز جدید", (ctx) =>
     ctx.reply("لطفاً نماد یا نام ارز را به انگلیسی وارد کنید:", {
       reply_markup: { force_reply: true },
@@ -173,7 +218,6 @@ function attachCommands(bot) {
       ctx.message.reply_to_message.text
     );
 
-    // اضافه کردن ارز جدید
     if (
       ctx.message.reply_to_message.text ===
       "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید:"
@@ -211,10 +255,7 @@ function attachCommands(bot) {
         ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
         console.error("Error in adding coin:", error);
       }
-    }
-
-    // حذف ارز از واچ‌لیست
-    else if (
+    } else if (
       ctx.message.reply_to_message.text ===
       "لطفاً نام ارزی که می‌خواهید حذف کنید را وارد کنید:"
     ) {
@@ -246,10 +287,7 @@ function attachCommands(bot) {
       });
 
       sendWatchlistMenu(ctx);
-    }
-
-    // پردازش ثبت هشدار جدید
-    else if (
+    } else if (
       ctx.message.reply_to_message.text.startsWith(
         "لطفاً اطلاعات هشدار را وارد کنید"
       )
@@ -332,6 +370,17 @@ function attachCommands(bot) {
         ["📜 لیست هشدارها"],
         ["🔔 ثبت هشدار جدید"],
         ["🗑️ پاک کردن هشدارها"],
+        ["↩️ بازگشت به منو اصلی"],
+      ]).resize()
+    );
+  }
+
+  function sendMarketMenu(ctx) {
+    ctx.reply(
+      "📢 منوی نمای کلی بازار:\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
+      Markup.keyboard([
+        ["😨 شاخص ترس و طمع"],
+        ["📈 برترین‌ها و بازندگان"],
         ["↩️ بازگشت به منو اصلی"],
       ]).resize()
     );
