@@ -157,7 +157,7 @@ function attachCommands(bot) {
     try {
       const prices = await getGoldAndCoinPrices();
       let message = "🏅 **قیمت سکه و طلا (به تومان)**:\n\n";
-      message += `💰 یک گرم طلا: ${prices.goldGram.toLocaleString()} تومان\n`;
+      message += `💰 یک گرم طلای 18 عیار: ${prices.goldGram.toLocaleString()} تومان\n`;
       message += `💰 سکه تمام بهار: ${prices.fullCoin.toLocaleString()} تومان\n`;
       message += `💰 نیم سکه: ${prices.halfCoin.toLocaleString()} تومان\n`;
       message += `💰 ربع سکه: ${prices.quarterCoin.toLocaleString()} تومان\n`;
