@@ -7,8 +7,12 @@ function attachActions(bot) {
     const userId = ctx.from.id;
     if (await isUserMember(userId, ctx)) {
       ctx.reply(
-        "✅ عضویت شما تایید شد! حالا می‌توانید از امکانات ربات استفاده کنید。",
-        Markup.keyboard([["🌍 نمای کلی بازار"], ["📊 واچ‌لیست قیمتی"], ["🔔 هشدار قیمتی"]]).resize()
+        "✅ عضویت شما تایید شد! حالا می‌توانید از امکانات ربات استفاده کنید.",
+        Markup.keyboard([
+          ["🌍 نمای کلی بازار"],
+          ["📊 واچ‌لیست قیمتی"],
+          ["🔔 هشدار قیمتی"],
+        ]).resize()
       );
     } else {
       ctx.answerCbQuery("❌ هنوز عضو کانال نشده‌اید!", { show_alert: true });
@@ -18,16 +22,21 @@ function attachActions(bot) {
   bot.action("update_prices", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) {
-      return ctx.answerCbQuery("❌ لطفاً ابتدا عضو کانال شوید!", { show_alert: true });
+      return ctx.answerCbQuery("❌ لطفاً ابتدا عضو کانال شوید!", {
+        show_alert: true,
+      });
     }
     try {
-      if (!global.userWatchlists[userId]) global.userWatchlists[userId] = [...BASE_COINS];
-      const userCoins = global.userWatchlists[userId];
-      const watchlistData = await getWatchlistData(userCoins);
+      const allCoins = [...BASE_COINS, ...global.userAddedCoins];
+      const watchlistData = await getWatchlistData(allCoins);
       const message = formatWatchlist(watchlistData);
       await ctx.reply(message, {
         parse_mode: "Markdown",
-        reply_markup: { inline_keyboard: [[Markup.button.callback("🔄 بروزرسانی", "update_prices")]] },
+        reply_markup: {
+          inline_keyboard: [
+            [Markup.button.callback("🔄 بروزرسانی", "update_prices")],
+          ],
+        },
       });
       ctx.answerCbQuery("✅ واچ‌لیست بروز شد!");
     } catch (error) {
@@ -39,13 +48,17 @@ function attachActions(bot) {
     let message = "📊 **واچ‌لیست قیمتی**:\n\n";
     coinsData.forEach((coin, index) => {
       const name = coin.name;
-      const price = coin.current_price.toLocaleString("en-US", { minimumFractionDigits: 4 });
+      const price = coin.current_price.toLocaleString("en-US", {
+        minimumFractionDigits: 4,
+      }); // دقت بیشتر در قیمت
       const change24h = coin.price_change_percentage_24h.toFixed(2);
       const changeEmoji = change24h >= 0 ? "📈" : "📉";
 
       message += `💸 *${name}*\n`;
       message += `   💰 قیمت: ${price} دلار\n`;
-      message += `   ${changeEmoji} تغییرات 24h: ${change24h >= 0 ? "+" : ""}${change24h}%\n`;
+      message += `   ${changeEmoji} تغییرات 24h: ${
+        change24h >= 0 ? "+" : ""
+      }${change24h}%\n`;
       if (index < coinsData.length - 1) message += "─".repeat(20) + "\n";
     });
     message += "\n🔄 *قیمت‌ها و تغییرات هر لحظه به‌روزرسانی می‌شوند!*";
