@@ -33,7 +33,7 @@ async function getTetherPrice() {
   const response = await axios.get("https://api.arzdigital.com/market.json");
   const tetherData = response.data.find((currency) => currency.id === "tether");
   if (!tetherData) throw new Error("اطلاعات تتر در دسترس نیست");
-  return tetherData.price / 10;
+  return tetherData.price / 10; // قیمت تتر به تومان
 }
 
 async function getFearGreedIndex() {
@@ -54,12 +54,38 @@ async function getTopGainersAndLosers() {
     const coins = response.data;
     coins.sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h);
     return {
-      topGainers: coins.slice(0, 5), // 5 ارز با بیشترین رشد
-      topLosers: coins.slice(-5).reverse(), // 5 ارز با بیشترین ضرر
+      topGainers: coins.slice(0, 5),
+      topLosers: coins.slice(-5).reverse(),
     };
   } catch (error) {
     console.error("خطا در دریافت برترین رشد و ریزش:", error.message);
     return null;
+  }
+}
+
+async function getGoldAndCoinPrices() {
+  try {
+    const response = await axios.get("https://api.arzdigital.com/market.json");
+    const data = response.data;
+    const goldGram = data.find(item => item.id === "gold-gram")?.price / 10; // قیمت یک گرم طلا به تومان
+    const fullCoin = data.find(item => item.id === "coin-bahar")?.price / 10; // سکه تمام بهار
+    const halfCoin = data.find(item => item.id === "coin-half")?.price / 10; // نیم سکه
+    const quarterCoin = data.find(item => item.id === "coin-quarter")?.price / 10; // ربع سکه
+    return { goldGram, fullCoin, halfCoin, quarterCoin };
+  } catch (error) {
+    console.error("خطا در دریافت قیمت سکه و طلا:", error.message);
+    throw error;
+  }
+}
+
+async function getDollarPrice() {
+  try {
+    const response = await axios.get("https://api.arzdigital.com/market.json");
+    const dollarData = response.data.find(item => item.id === "usd"); // فرض می‌کنیم دلار هم هست
+    return dollarData ? dollarData.price / 10 : null; // قیمت دلار به تومان
+  } catch (error) {
+    console.error("خطا در دریافت قیمت دلار:", error.message);
+    throw error;
   }
 }
 
@@ -70,4 +96,6 @@ module.exports = {
   getTetherPrice,
   getFearGreedIndex,
   getTopGainersAndLosers,
+  getGoldAndCoinPrices,
+  getDollarPrice,
 };

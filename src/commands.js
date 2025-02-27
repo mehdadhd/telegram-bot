@@ -7,6 +7,8 @@ const {
   getWatchlistData,
   getFearGreedIndex,
   getTopGainersAndLosers,
+  getGoldAndCoinPrices,
+  getDollarPrice,
 } = require("./api");
 
 function attachCommands(bot) {
@@ -81,6 +83,12 @@ function attachCommands(bot) {
     }
   });
 
+  bot.hears("💰 بازار ارز و طلا", async (ctx) => {
+    const userId = ctx.from.id;
+    if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
+    sendCurrencyAndGoldMenu(ctx);
+  });
+
   bot.hears("🔔 هشدار قیمتی", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -139,6 +147,46 @@ function attachCommands(bot) {
     } catch (error) {
       ctx.reply(
         "❌ مشکلی در دریافت برترین‌ها و بازندگان پیش آمد، لطفاً بعداً امتحان کنید."
+      );
+    }
+  });
+
+  bot.hears("🏅 قیمت سکه و طلا", async (ctx) => {
+    const userId = ctx.from.id;
+    if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
+    try {
+      const prices = await getGoldAndCoinPrices();
+      let message = "🏅 **قیمت سکه و طلا (به تومان)**:\n\n";
+      message += `💰 یک گرم طلا: ${prices.goldGram.toLocaleString()} تومان\n`;
+      message += `💰 سکه تمام بهار: ${prices.fullCoin.toLocaleString()} تومان\n`;
+      message += `💰 نیم سکه: ${prices.halfCoin.toLocaleString()} تومان\n`;
+      message += `💰 ربع سکه: ${prices.quarterCoin.toLocaleString()} تومان\n`;
+
+      ctx.reply(message, { parse_mode: "Markdown" });
+      sendCurrencyAndGoldMenu(ctx);
+    } catch (error) {
+      ctx.reply(
+        "❌ مشکلی در دریافت قیمت سکه و طلا پیش آمد، لطفاً بعداً امتحان کنید."
+      );
+    }
+  });
+
+  bot.hears("💵 قیمت دلار", async (ctx) => {
+    const userId = ctx.from.id;
+    if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
+    try {
+      const dollarPrice = await getDollarPrice();
+      if (dollarPrice) {
+        ctx.reply(`💵 **قیمت دلار**: ${dollarPrice.toLocaleString()} تومان`, {
+          parse_mode: "Markdown",
+        });
+      } else {
+        ctx.reply("❌ قیمت دلار در دسترس نیست.");
+      }
+      sendCurrencyAndGoldMenu(ctx);
+    } catch (error) {
+      ctx.reply(
+        "❌ مشکلی در دریافت قیمت دلار پیش آمد، لطفاً بعداً امتحان کنید."
       );
     }
   });
@@ -360,6 +408,7 @@ function attachCommands(bot) {
         ["🌍 نمای کلی بازار"],
         ["📊 واچ‌لیست قیمتی"],
         ["🔔 هشدار قیمتی"],
+        ["💰 بازار ارز و طلا"],
       ]).resize()
     );
   }
@@ -382,6 +431,17 @@ function attachCommands(bot) {
       Markup.keyboard([
         ["😨 شاخص ترس و طمع"],
         ["📈 برترین‌ها و بازندگان"],
+        ["↩️ بازگشت به منو اصلی"],
+      ]).resize()
+    );
+  }
+
+  function sendCurrencyAndGoldMenu(ctx) {
+    ctx.reply(
+      "📢 منوی بازار ارز و طلا:\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
+      Markup.keyboard([
+        ["🏅 قیمت سکه و طلا"],
+        ["💵 قیمت دلار"],
         ["↩️ بازگشت به منو اصلی"],
       ]).resize()
     );
