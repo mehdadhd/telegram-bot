@@ -1,6 +1,7 @@
 const moment = require("moment-jalaali");
+const momentTimezone = require("moment-timezone"); // وارد کردن جداگانه
 moment.loadPersian({ dialect: "persian-modern" });
-require("moment-timezone"); // برای تنظیم timezone
+moment.tz = momentTimezone.tz; // اتصال moment-timezone به moment
 moment.tz.setDefault("Asia/Tehran"); // تنظیم منطقه زمانی ایران
 
 function attachActions(bot) {
@@ -48,7 +49,7 @@ function formatWatchlist(coinsData) {
   let message = "📊 **واچ‌لیست قیمتی**:\n\n";
   coinsData.forEach((coin, index) => {
     const name = coin.name;
-    const price = Math.round(coin.current_price).toLocaleString("en-US"); // بدون اعشار
+    const price = Math.round(coin.current_price).toLocaleString("en-US");
     const change24h = coin.price_change_percentage_24h.toFixed(2);
     const changeEmoji = change24h >= 0 ? "📈" : "📉";
 
