@@ -27,14 +27,10 @@ async function getWatchlistData(coins) {
 async function searchCoin(query) {
   try {
     const response = await axios.get(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`);
-    const coins = response.data.coins;
-    if (coins.length > 0) {
-      return coins[0].id; // اولین نتیجه رو برمی‌گردونیم
-    }
-    return null;
+    return response.data.coins.slice(0, 5); // ۵ نتیجه اول رو برمی‌گردونیم
   } catch (error) {
     console.error("خطا در جستجوی ارز:", error.message);
-    return null;
+    return [];
   }
 }
 
