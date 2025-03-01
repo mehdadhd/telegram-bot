@@ -1,4 +1,6 @@
 const { Markup } = require("telegraf");
+const moment = require("moment-jalaali");
+moment.loadPersian({ dialect: "persian-modern" });
 const { CHANNEL_USERNAME, BASE_COINS } = require("../config");
 const {
   isUserMember,
@@ -67,7 +69,12 @@ function attachCommands(bot) {
         global.userWatchlists[userId] = [...BASE_COINS];
       const userCoins = global.userWatchlists[userId];
       const watchlistData = await getWatchlistData(userCoins);
-      await ctx.reply(formatWatchlist(watchlistData), {
+      const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd"); // تاریخ شمسی، ساعت، و روز هفته
+      const message = `${formatWatchlist(
+        watchlistData
+      )}\n\n📅 **تاریخ و ساعت:** ${now}`;
+
+      await ctx.reply(message, {
         parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [
@@ -283,14 +290,20 @@ function attachCommands(bot) {
             const watchlistData = await getWatchlistData(
               global.userWatchlists[userId]
             );
-            await ctx.reply(formatWatchlist(watchlistData), {
-              parse_mode: "Markdown",
-              reply_markup: {
-                inline_keyboard: [
-                  [Markup.button.callback("🔄 بروزرسانی", "update_prices")],
-                ],
-              },
-            });
+            const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd");
+            await ctx.reply(
+              `${formatWatchlist(
+                watchlistData
+              )}\n\n📅 **تاریخ و ساعت:** ${now}`,
+              {
+                parse_mode: "Markdown",
+                reply_markup: {
+                  inline_keyboard: [
+                    [Markup.button.callback("🔄 بروزرسانی", "update_prices")],
+                  ],
+                },
+              }
+            );
           } else {
             ctx.reply(`❌ ارز ${newCoin} قبلاً در واچ‌لیست شما وجود دارد.`);
           }
@@ -326,14 +339,18 @@ function attachCommands(bot) {
       const watchlistData = await getWatchlistData(
         global.userWatchlists[userId]
       );
-      await ctx.reply(formatWatchlist(watchlistData), {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [Markup.button.callback("🔄 بروزرسانی", "update_prices")],
-          ],
-        },
-      });
+      const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd");
+      await ctx.reply(
+        `${formatWatchlist(watchlistData)}\n\n📅 **تاریخ و ساعت:** ${now}`,
+        {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [Markup.button.callback("🔄 بروزرسانی", "update_prices")],
+            ],
+          },
+        }
+      );
 
       sendWatchlistMenu(ctx);
     } else if (
