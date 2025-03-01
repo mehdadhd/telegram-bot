@@ -308,13 +308,34 @@ function attachCommands(bot) {
             reply_markup: { inline_keyboard: buttons },
           });
         } else {
-          ctx.reply(
-            "❌ ارزی با این نام یا نماد پیدا نشد! لطفاً دوباره تلاش کنید."
-          );
-          sendWatchlistMenu(ctx);
+          await ctx.reply("❌ ارزی با این نام یا نماد پیدا نشد!", {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  Markup.button.callback(
+                    "بازگشت به منوی واچ‌لیست",
+                    "back_to_watchlist"
+                  ),
+                ],
+              ],
+            },
+          });
         }
       } catch (error) {
-        ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
+        await ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.", {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                Markup.button.callback(
+                  "بازگشت به منوی واچ‌لیست",
+                  "back_to_watchlist"
+                ),
+              ],
+            ],
+          },
+        });
         console.error("Error in searching coin:", error);
       }
     } else if (
@@ -347,17 +368,52 @@ function attachCommands(bot) {
               reply_markup: { inline_keyboard: buttons },
             });
           } else {
-            ctx.reply("❌ هیچ ارزی با این نام یا نماد در واچ‌لیست شما نیست!");
-            sendWatchlistMenu(ctx);
+            await ctx.reply(
+              "❌ هیچ ارزی با این نام یا نماد در واچ‌لیست شما نیست!",
+              {
+                parse_mode: "Markdown",
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      Markup.button.callback(
+                        "بازگشت به منوی واچ‌لیست",
+                        "back_to_watchlist"
+                      ),
+                    ],
+                  ],
+                },
+              }
+            );
           }
         } else {
-          ctx.reply(
-            "❌ ارزی با این نام یا نماد پیدا نشد! لطفاً دوباره تلاش کنید."
-          );
-          sendWatchlistMenu(ctx);
+          await ctx.reply("❌ ارزی با این نام یا نماد پیدا نشد!", {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  Markup.button.callback(
+                    "بازگشت به منوی واچ‌لیست",
+                    "back_to_watchlist"
+                  ),
+                ],
+              ],
+            },
+          });
         }
       } catch (error) {
-        ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
+        await ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.", {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                Markup.button.callback(
+                  "بازگشت به منوی واچ‌لیست",
+                  "back_to_watchlist"
+                ),
+              ],
+            ],
+          },
+        });
         console.error("Error in searching coin for removal:", error);
       }
     } else if (
@@ -416,13 +472,35 @@ function attachCommands(bot) {
             reply_markup: { inline_keyboard: buttons },
           });
         } else {
-          ctx.reply(
-            "❌ ارزی با این نام یا نماد پیدا نشد! لطفاً دوباره تلاش کنید."
-          );
+          await ctx.reply("❌ ارزی با این نام یا نماد پیدا نشد!", {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  Markup.button.callback(
+                    "بازگشت به منوی واچ‌لیست",
+                    "back_to_watchlist"
+                  ),
+                ],
+              ],
+            },
+          });
         }
       } catch (error) {
+        await ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.", {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                Markup.button.callback(
+                  "بازگشت به منوی واچ‌لیست",
+                  "back_to_watchlist"
+                ),
+              ],
+            ],
+          },
+        });
         console.error("Error in searching coin for alert:", error);
-        ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
       }
     }
   });
@@ -463,7 +541,19 @@ function attachCommands(bot) {
       }
       ctx.answerCbQuery();
     } catch (error) {
-      ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
+      await ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.", {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              Markup.button.callback(
+                "بازگشت به منوی واچ‌لیست",
+                "back_to_watchlist"
+              ),
+            ],
+          ],
+        },
+      });
       console.error("Error in adding coin:", error);
     }
   });
@@ -500,7 +590,19 @@ function attachCommands(bot) {
       }
       ctx.answerCbQuery();
     } catch (error) {
-      ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
+      await ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.", {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              Markup.button.callback(
+                "بازگشت به منوی واچ‌لیست",
+                "back_to_watchlist"
+              ),
+            ],
+          ],
+        },
+      });
       console.error("Error in removing coin:", error);
     }
   });
@@ -529,9 +631,26 @@ function attachCommands(bot) {
       }
       ctx.answerCbQuery();
     } catch (error) {
-      ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.");
+      await ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.", {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              Markup.button.callback(
+                "بازگشت به منوی واچ‌لیست",
+                "back_to_watchlist"
+              ),
+            ],
+          ],
+        },
+      });
       console.error("Error in saving alert:", error);
     }
+  });
+
+  bot.action("back_to_watchlist", (ctx) => {
+    sendWatchlistMenu(ctx);
+    ctx.answerCbQuery();
   });
 
   function sendMainMenu(ctx) {
