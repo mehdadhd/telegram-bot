@@ -228,10 +228,7 @@ function attachCommands(bot) {
     ctx.reply(
       "لطفاً اطلاعات هشدار را وارد کنید:\n" +
         "فرمت: `ارز قیمت نوع`\n" +
-        "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n" +
-        "📝 توضیح:\n" +
-        "- `above`: وقتی قیمت بالاتر از هدف برسه\n" +
-        "- `below`: وقتی قیمت پایین‌تر از هدف برسه",
+        "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`",
       { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
     );
   });
@@ -296,6 +293,7 @@ function attachCommands(bot) {
           if (!global.userWatchlists[userId].includes(newCoin)) {
             global.userWatchlists[userId].push(newCoin);
             ctx.reply(`✅ ارز ${coinCheck[0].name} به واچ‌لیست شما اضافه شد.`);
+
             const watchlistData = await getWatchlistData(
               global.userWatchlists[userId]
             );
@@ -318,6 +316,7 @@ function attachCommands(bot) {
               `❌ ارز ${coinCheck[0].name} قبلاً در واچ‌لیست شما وجود دارد.`
             );
           }
+          sendWatchlistMenu(ctx);
         } else {
           await ctx.reply("❌ ارزی با این نام یا نماد پیدا نشد!", {
             parse_mode: "Markdown",
@@ -382,6 +381,7 @@ function attachCommands(bot) {
               },
             }
           );
+          sendWatchlistMenu(ctx);
         } else {
           await ctx.reply("❌ این ارز در واچ‌لیست شما نیست!", {
             parse_mode: "Markdown",
@@ -433,9 +433,7 @@ function attachCommands(bot) {
         console.log("Invalid format detected");
         return ctx.reply(
           "❌ فرمت اشتباه!\n" +
-            "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`\n" +
-            "- `above`: وقتی قیمت بالاتر از هدف برسه\n" +
-            "- `below`: وقتی قیمت پایین‌تر از هدف برسه",
+            "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`",
           { parse_mode: "Markdown" }
         );
       }
@@ -497,7 +495,7 @@ function attachCommands(bot) {
 
   function sendMainMenu(ctx) {
     ctx.reply(
-      "✅ خوش آمدید! لطفاً از منوی زیر استفاده کنید:",
+      "منوی اصلی:",
       Markup.keyboard([
         ["🌍 نمای کلی بازار"],
         ["📊 واچ‌لیست قیمتی"],
@@ -509,7 +507,7 @@ function attachCommands(bot) {
 
   function sendAlertMenu(ctx) {
     ctx.reply(
-      "📢 منوی هشدار قیمتی:\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
+      "منوی هشدار قیمتی:",
       Markup.keyboard([
         ["📜 لیست هشدارها"],
         ["🔔 ثبت هشدار جدید"],
@@ -521,7 +519,7 @@ function attachCommands(bot) {
 
   function sendMarketMenu(ctx) {
     ctx.reply(
-      "📢 منوی نمای کلی بازار:\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
+      "منوی نمای کلی بازار:",
       Markup.keyboard([
         ["😨 شاخص ترس و طمع"],
         ["📈 برترین‌ها و بازندگان"],
@@ -532,7 +530,7 @@ function attachCommands(bot) {
 
   function sendCurrencyAndGoldMenu(ctx) {
     ctx.reply(
-      "📢 منوی بازار ارز و طلا:\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
+      "منوی بازار ارز و طلا:",
       Markup.keyboard([
         ["🏅 قیمت سکه و طلا"],
         ["💵 قیمت دلار"],
@@ -543,7 +541,7 @@ function attachCommands(bot) {
 
   function sendWatchlistMenu(ctx) {
     ctx.reply(
-      "لطفاً یک گزینه را انتخاب کنید:",
+      "منوی واچ‌لیست:",
       Markup.keyboard([
         ["➕ اضافه کردن ارز جدید"],
         ["➖ حذف ارز از واچ‌لیست"],
@@ -554,7 +552,7 @@ function attachCommands(bot) {
 
   function sendMembershipPrompt(ctx) {
     return ctx.reply(
-      "❌ برای استفاده از این قابلیت، ابتدا عضو کانال شوید.",
+      "❌ برای استفاده از این ربات، ابتدا عضو کانال شوید.",
       Markup.inlineKeyboard([
         [
           Markup.button.url(
