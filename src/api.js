@@ -24,17 +24,6 @@ async function getWatchlistData(coins) {
   }
 }
 
-async function searchCoin(query) {
-  try {
-    const response = await axios.get(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`);
-    console.log("Search API response:", response.data); // دیباگ خروجی API
-    return response.data.coins.slice(0, 5); // ۵ نتیجه اول
-  } catch (error) {
-    console.error("خطا در جستجوی ارز:", error.message, error.response?.data);
-    return [];
-  }
-}
-
 async function getMarketOverview() {
   const response = await axios.get("https://api.coingecko.com/api/v3/global");
   return response.data.data;
@@ -110,7 +99,6 @@ async function getDollarPrice() {
 module.exports = {
   isUserMember,
   getWatchlistData,
-  searchCoin,
   getMarketOverview,
   getTetherPrice,
   getFearGreedIndex,
