@@ -1,9 +1,9 @@
 const { Markup } = require("telegraf");
 const moment = require("moment-jalaali");
-const momentTimezone = require("moment-timezone"); // وارد کردن جداگانه
+const momentTimezone = require("moment-timezone");
 moment.loadPersian({ dialect: "persian-modern" });
-moment.tz = momentTimezone.tz; // اتصال moment-timezone به moment
-moment.tz.setDefault("Asia/Tehran"); // تنظیم منطقه زمانی ایران
+moment.tz = momentTimezone.tz;
+moment.tz.setDefault("Asia/Tehran");
 const { CHANNEL_USERNAME, BASE_COINS } = require("../config");
 const {
   isUserMember,
@@ -497,7 +497,7 @@ function attachCommands(bot) {
     let message = "📊 **واچ‌لیست قیمتی**:\n\n";
     coinsData.forEach((coin, index) => {
       const name = coin.name;
-      const price = Math.round(coin.current_price).toLocaleString("en-US");
+      const price = coin.current_price; // قیمت خام از API
       const change24h = coin.price_change_percentage_24h.toFixed(2);
       const changeEmoji = change24h >= 0 ? "📈" : "📉";
 
