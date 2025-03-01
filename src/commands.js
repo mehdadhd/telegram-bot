@@ -1,6 +1,8 @@
 const { Markup } = require("telegraf");
 const moment = require("moment-jalaali");
 moment.loadPersian({ dialect: "persian-modern" });
+require("moment-timezone");
+moment.tz.setDefault("Asia/Tehran"); // تنظیم منطقه زمانی ایران
 const { CHANNEL_USERNAME, BASE_COINS } = require("../config");
 const {
   isUserMember,
@@ -69,7 +71,7 @@ function attachCommands(bot) {
         global.userWatchlists[userId] = [...BASE_COINS];
       const userCoins = global.userWatchlists[userId];
       const watchlistData = await getWatchlistData(userCoins);
-      const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd"); // تاریخ شمسی، ساعت، و روز هفته
+      const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd");
       const message = `${formatWatchlist(
         watchlistData
       )}\n\n📅 **تاریخ و ساعت:** ${now}`;
@@ -494,9 +496,7 @@ function attachCommands(bot) {
     let message = "📊 **واچ‌لیست قیمتی**:\n\n";
     coinsData.forEach((coin, index) => {
       const name = coin.name;
-      const price = coin.current_price.toLocaleString("en-US", {
-        minimumFractionDigits: 4,
-      });
+      const price = Math.round(coin.current_price).toLocaleString("en-US"); // بدون اعشار
       const change24h = coin.price_change_percentage_24h.toFixed(2);
       const changeEmoji = change24h >= 0 ? "📈" : "📉";
 
