@@ -24,6 +24,20 @@ async function getWatchlistData(coins) {
   }
 }
 
+async function searchCoin(query) {
+  try {
+    const response = await axios.get(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`);
+    const coins = response.data.coins;
+    if (coins.length > 0) {
+      return coins[0].id; // اولین نتیجه رو برمی‌گردونیم
+    }
+    return null;
+  } catch (error) {
+    console.error("خطا در جستجوی ارز:", error.message);
+    return null;
+  }
+}
+
 async function getMarketOverview() {
   const response = await axios.get("https://api.coingecko.com/api/v3/global");
   return response.data.data;
@@ -52,9 +66,7 @@ async function getTopGainersAndLosers() {
       "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h"
     );
     const coins = response.data;
-    coins.sort(
-      (a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h
-    );
+    coins.sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h);
     return {
       topGainers: coins.slice(0, 5),
       topLosers: coins.slice(-5).reverse(),
@@ -68,10 +80,10 @@ async function getTopGainersAndLosers() {
 async function getGoldAndCoinPrices() {
   try {
     const response = await axios.get("https://api.navasan.tech/latest", {
-      params: { api_key: "freemHJDIZZKzELPq5dncIfCXeXjtjv6" }, // کلید API خودت رو بذار
+      params: { api_key: "YOUR_API_KEY_HERE" }
     });
     const data = response.data;
-    console.log("Raw API response for gold and coins:", data); // لاگ برای دیباگ
+    console.log("Raw API response for gold and coins:", data);
     return {
       goldGram: parseInt(data["geram18"]["value"]),
       fullCoin: parseInt(data["sekee"]["value"]),
@@ -87,10 +99,10 @@ async function getGoldAndCoinPrices() {
 async function getDollarPrice() {
   try {
     const response = await axios.get("https://api.navasan.tech/latest", {
-      params: { api_key: "freemHJDIZZKzELPq5dncIfCXeXjtjv6" }, // کلید API خودت رو بذار
+      params: { api_key: "YOUR_API_KEY_HERE" }
     });
     const data = response.data;
-    console.log("Raw API response for dollar:", data); // لاگ برای دیباگ
+    console.log("Raw API response for dollar:", data);
     return parseInt(data["usd"]["value"]);
   } catch (error) {
     console.error("خطا در دریافت قیمت دلار:", error.message);
@@ -101,6 +113,7 @@ async function getDollarPrice() {
 module.exports = {
   isUserMember,
   getWatchlistData,
+  searchCoin,
   getMarketOverview,
   getTetherPrice,
   getFearGreedIndex,
