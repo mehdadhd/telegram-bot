@@ -9,6 +9,7 @@
     "axios": "^1.7.2",
     "moment-jalaali": "^0.10.4",
     "moment-timezone": "^0.5.47",
-    "telegraf": "^4.16.3"
+    "telegraf": "^4.16.3",
+    "ws": "^8.18.1"
   }
 }
