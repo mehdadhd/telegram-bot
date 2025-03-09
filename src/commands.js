@@ -16,25 +16,6 @@ const {
   getDollarPrice,
 } = require("./api");
 
-// کش کوتاه‌مدت برای واچ‌لیست
-let priceCache = {};
-let lastFetchTime = {};
-
-async function getCachedWatchlistData(coins) {
-  const coinList = coins.join(",");
-  const now = Date.now();
-  if (
-    priceCache[coinList] &&
-    now - lastFetchTime[coinList] < 10000 // 10 ثانیه
-  ) {
-    return priceCache[coinList];
-  }
-  const data = await getWatchlistData(coins);
-  priceCache[coinList] = data;
-  lastFetchTime[coinList] = now;
-  return data;
-}
-
 function attachCommands(bot) {
   bot.start(async (ctx) => {
     const userId = ctx.from.id;
@@ -92,7 +73,7 @@ function attachCommands(bot) {
       if (!global.userWatchlists[userId])
         global.userWatchlists[userId] = [...BASE_COINS];
       const userCoins = global.userWatchlists[userId];
-      const watchlistData = await getCachedWatchlistData(userCoins);
+      const watchlistData = await getWatchlistData(userCoins);
       const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd");
       const message = `${formatWatchlist(
         watchlistData
@@ -125,15 +106,10 @@ function attachCommands(bot) {
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
     ctx.reply(
       "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
+        "یه تعداد ارزی بدید که ربات تبدیل به دلار کنه و با نرخ دلار اونو به تومان نشون بده\n" +
         "مثال: `2 bitcoin` یا `5000 not`\n" +
         "فرمت: `تعداد ارز`",
-      {
-        parse_mode: "Markdown",
-        reply_markup: Markup.keyboard([["↩️ بازگشت", "↩️ بازگشت به منو اصلی"]])
-          .resize()
-          .oneTime(),
-        force_reply: true, // ربات خودش روی پیام ریپلای می‌کنه
-      }
+      { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
     );
   });
 
@@ -151,17 +127,10 @@ function attachCommands(bot) {
       if (fearGreed) {
         const value = fearGreed.value;
         const classification = fearGreed.value_classification;
-
-        let message = "😨 **شاخص ترس و طمع کریپتو**\n\n";
-        message += "📖 **راهنما:**\n";
-        message += "- **0-24**: ترس شدید (فروش زیاد بازار)\n";
-        message += "- **25-44**: ترس (احتیاط در خرید)\n";
-        message += "- **45-55**: خنثی (بازار متعادل)\n";
-        message += "- **56-75**: طمع (تمایل به خرید)\n";
-        message += "- **76-100**: طمع شدید (احتمال حباب)\n\n";
-        message += `📊 **شاخص فعلی**: ${value} (${classification})`;
-
-        ctx.reply(message, { parse_mode: "Markdown" });
+        ctx.reply(
+          `😨 **شاخص ترس و طمع کریپتو**: ${value} (${classification})`,
+          { parse_mode: "Markdown" }
+        );
       } else {
         ctx.reply("😨 شاخص ترس و طمع: در دسترس نیست");
       }
@@ -279,7 +248,6 @@ function attachCommands(bot) {
     }
   });
 
-  bot.hears("↩️ بازگشت", (ctx) => sendMainMenu(ctx));
   bot.hears("↩️ بازگشت به منو اصلی", (ctx) => sendMainMenu(ctx));
 
   bot.hears("📜 لیست هشدارها", async (ctx) => {
@@ -366,7 +334,7 @@ function attachCommands(bot) {
     ) {
       const newCoin = text.toLowerCase().trim();
       try {
-        const coinCheck = await getCachedWatchlistData([newCoin]);
+        const coinCheck = await getWatchlistData([newCoin]);
         if (coinCheck.length > 0) {
           if (!global.userWatchlists[userId])
             global.userWatchlists[userId] = [...BASE_COINS];
@@ -374,7 +342,7 @@ function attachCommands(bot) {
             global.userWatchlists[userId].push(newCoin);
             ctx.reply(`✅ ارز ${coinCheck[0].name} به واچ‌لیست شما اضافه شد.`);
 
-            const watchlistData = await getCachedWatchlistData(
+            const watchlistData = await getWatchlistData(
               global.userWatchlists[userId]
             );
             const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd");
@@ -446,7 +414,7 @@ function attachCommands(bot) {
           );
           ctx.reply(`✅ ارز ${coinToRemove} از واچ‌لیست شما حذف شد.`);
 
-          const watchlistData = await getCachedWatchlistData(
+          const watchlistData = await getWatchlistData(
             global.userWatchlists[userId]
           );
           const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd");
@@ -498,8 +466,19 @@ function attachCommands(bot) {
         "لطفاً اطلاعات هشدار را وارد کنید"
       )
     ) {
+      console.log("Processing alert input:", text);
       const [coin, targetPriceStr, type] = text.split(" ");
+      console.log(
+        "Parsed input - coin:",
+        coin,
+        "price:",
+        targetPriceStr,
+        "type:",
+        type
+      );
+
       if (!coin || !targetPriceStr || !["above", "below"].includes(type)) {
+        console.log("Invalid format detected");
         return ctx.reply(
           "❌ فرمت اشتباه!\n" +
             "مثال: `bitcoin 70000 above` یا `notcoin 0.003 below`",
@@ -509,15 +488,19 @@ function attachCommands(bot) {
 
       const targetPrice = parseFloat(targetPriceStr);
       if (isNaN(targetPrice)) {
+        console.log("Invalid price detected");
         return ctx.reply("❌ قیمت باید عدد باشد! مثال: `bitcoin 70000 above`");
       }
 
       try {
-        const coinCheck = await getCachedWatchlistData([coin.toLowerCase()]);
+        console.log("Fetching coin data for:", coin);
+        const coinCheck = await getWatchlistData([coin.toLowerCase()]);
         if (coinCheck.length === 0) {
+          console.log("Coin not found:", coin);
           return ctx.reply("❌ ارز درخواستی یافت نشد!");
         }
 
+        console.log("Saving alert:", { userId, coin, targetPrice, type });
         global.priceAlerts.push({
           userId,
           coin: coin.toLowerCase(),
@@ -525,6 +508,7 @@ function attachCommands(bot) {
           type,
         });
 
+        console.log("Alert saved successfully");
         ctx.reply(
           `✅ هشدار قیمتی ثبت شد!\n` +
             `ارز: *${coinCheck[0].name}*\n` +
@@ -554,57 +538,36 @@ function attachCommands(bot) {
         "لطفاً تعداد واحد و ارز را وارد کنید"
       )
     ) {
+      console.log("Processing conversion input:", text);
       const [amountStr, coin] = text.split(" ");
+      console.log("Parsed input - amount:", amountStr, "coin:", coin);
+
       if (!amountStr || !coin) {
+        console.log("Invalid format detected");
         return ctx.reply(
           "❌ فرمت اشتباه!\n" + "مثال: `2 bitcoin` یا `5000 not`",
-          {
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
-                  Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
-                ],
-              ],
-            },
-          }
+          { parse_mode: "Markdown" }
         );
       }
 
       const amount = parseFloat(amountStr);
       if (isNaN(amount)) {
-        return ctx.reply("❌ مقدار باید عدد باشد! مثال: `2 bitcoin`", {
-          parse_mode: "Markdown",
-          reply_markup: {
-            inline_keyboard: [
-              [
-                Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
-                Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
-              ],
-            ],
-          },
-        });
+        console.log("Invalid amount detected");
+        return ctx.reply("❌ مقدار باید عدد باشد! مثال: `2 bitcoin`");
       }
 
       try {
-        const coinCheck = await getCachedWatchlistData([coin.toLowerCase()]);
+        console.log("Fetching coin data for:", coin);
+        const coinCheck = await getWatchlistData([coin.toLowerCase()]);
         if (coinCheck.length === 0) {
-          return ctx.reply("❌ ارز درخواستی یافت نشد!", {
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
-                  Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
-                ],
-              ],
-            },
-          });
+          console.log("Coin not found:", coin);
+          return ctx.reply("❌ ارز درخواستی یافت نشد!");
         }
 
         const coinPriceUsd = coinCheck[0].current_price;
         const totalUsd = amount * coinPriceUsd;
+
+        console.log("Fetching dollar rate");
         const dollarRate = await getDollarPrice();
         if (dollarRate === 0) {
           throw new Error("نرخ دلار دریافت نشد");
@@ -627,33 +590,13 @@ function attachCommands(bot) {
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
-              [
-                Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
-                Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
-              ],
+              [Markup.button.callback("بازگشت به منوی اصلی", "back_to_main")],
             ],
           },
         });
         console.error("Error in conversion:", error);
       }
     }
-  });
-
-  // اکشن‌های اینلاین
-  bot.action("retry_conversion", (ctx) => {
-    ctx.reply(
-      "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
-        "مثال: `2 bitcoin` یا `5000 not`\n" +
-        "فرمت: `تعداد ارز`",
-      {
-        parse_mode: "Markdown",
-        reply_markup: Markup.keyboard([["↩️ بازگشت", "↩️ بازگشت به منو اصلی"]])
-          .resize()
-          .oneTime(),
-        force_reply: true,
-      }
-    );
-    ctx.answerCbQuery();
   });
 
   bot.action("back_to_watchlist", (ctx) => {
@@ -671,7 +614,6 @@ function attachCommands(bot) {
     ctx.answerCbQuery();
   });
 
-  // منوها
   function sendMainMenu(ctx) {
     ctx.reply(
       "منوی اصلی:",
