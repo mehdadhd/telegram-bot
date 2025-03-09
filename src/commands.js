@@ -129,7 +129,10 @@ function attachCommands(bot) {
         "فرمت: `تعداد ارز`",
       {
         parse_mode: "Markdown",
-        reply_markup: Markup.keyboard(["↩️ بازگشت"]).resize().oneTime(),
+        reply_markup: Markup.keyboard([["↩️ بازگشت", "↩️ بازگشت به منو اصلی"]])
+          .resize()
+          .oneTime(),
+        force_reply: true, // ربات خودش روی پیام ریپلای می‌کنه
       }
     );
   });
@@ -644,7 +647,10 @@ function attachCommands(bot) {
         "فرمت: `تعداد ارز`",
       {
         parse_mode: "Markdown",
-        reply_markup: Markup.keyboard(["↩️ بازگشت"]).resize().oneTime(),
+        reply_markup: Markup.keyboard([["↩️ بازگشت", "↩️ بازگشت به منو اصلی"]])
+          .resize()
+          .oneTime(),
+        force_reply: true,
       }
     );
     ctx.answerCbQuery();
