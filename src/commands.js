@@ -127,10 +127,7 @@ function attachCommands(bot) {
       "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
         "مثال: `2 bitcoin` یا `5000 not`\n" +
         "فرمت: `تعداد ارز`",
-      {
-        parse_mode: "Markdown",
-        reply_markup: Markup.keyboard(["↩️ بازگشت"]).resize().oneTime(),
-      }
+      { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
     );
   });
 
@@ -148,17 +145,10 @@ function attachCommands(bot) {
       if (fearGreed) {
         const value = fearGreed.value;
         const classification = fearGreed.value_classification;
-
-        let message = "😨 **شاخص ترس و طمع کریپتو**\n\n";
-        message += "📖 **راهنما:**\n";
-        message += "- **0-24**: ترس شدید (فروش زیاد بازار)\n";
-        message += "- **25-44**: ترس (احتیاط در خرید)\n";
-        message += "- **45-55**: خنثی (بازار متعادل)\n";
-        message += "- **56-75**: طمع (تمایل به خرید)\n";
-        message += "- **76-100**: طمع شدید (احتمال حباب)\n\n";
-        message += `📊 **شاخص فعلی**: ${value} (${classification})`;
-
-        ctx.reply(message, { parse_mode: "Markdown" });
+        ctx.reply(
+          `😨 **شاخص ترس و طمع کریپتو**: ${value} (${classification})`,
+          { parse_mode: "Markdown" }
+        );
       } else {
         ctx.reply("😨 شاخص ترس و طمع: در دسترس نیست");
       }
@@ -276,7 +266,7 @@ function attachCommands(bot) {
     }
   });
 
-  bot.hears("↩️ بازگشت", (ctx) => sendMainMenu(ctx));
+  bot.hears("↩️ بازگشت به منو اصلی", (ctx) => sendMainMenu(ctx));
 
   bot.hears("📜 لیست هشدارها", async (ctx) => {
     const userId = ctx.from.id;
@@ -554,49 +544,19 @@ function attachCommands(bot) {
       if (!amountStr || !coin) {
         return ctx.reply(
           "❌ فرمت اشتباه!\n" + "مثال: `2 bitcoin` یا `5000 not`",
-          {
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
-                  Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
-                ],
-              ],
-            },
-          }
+          { parse_mode: "Markdown" }
         );
       }
 
       const amount = parseFloat(amountStr);
       if (isNaN(amount)) {
-        return ctx.reply("❌ مقدار باید عدد باشد! مثال: `2 bitcoin`", {
-          parse_mode: "Markdown",
-          reply_markup: {
-            inline_keyboard: [
-              [
-                Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
-                Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
-              ],
-            ],
-          },
-        });
+        return ctx.reply("❌ مقدار باید عدد باشد! مثال: `2 bitcoin`");
       }
 
       try {
         const coinCheck = await getCachedWatchlistData([coin.toLowerCase()]);
         if (coinCheck.length === 0) {
-          return ctx.reply("❌ ارز درخواستی یافت نشد!", {
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
-                  Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
-                ],
-              ],
-            },
-          });
+          return ctx.reply("❌ ارز درخواستی یافت نشد!");
         }
 
         const coinPriceUsd = coinCheck[0].current_price;
@@ -623,30 +583,13 @@ function attachCommands(bot) {
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
-              [
-                Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
-                Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
-              ],
+              [Markup.button.callback("بازگشت به منوی اصلی", "back_to_main")],
             ],
           },
         });
         console.error("Error in conversion:", error);
       }
     }
-  });
-
-  // اکشن‌های اینلاین
-  bot.action("retry_conversion", (ctx) => {
-    ctx.reply(
-      "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
-        "مثال: `2 bitcoin` یا `5000 not`\n" +
-        "فرمت: `تعداد ارز`",
-      {
-        parse_mode: "Markdown",
-        reply_markup: Markup.keyboard(["↩️ بازگشت"]).resize().oneTime(),
-      }
-    );
-    ctx.answerCbQuery();
   });
 
   bot.action("back_to_watchlist", (ctx) => {
@@ -664,7 +607,6 @@ function attachCommands(bot) {
     ctx.answerCbQuery();
   });
 
-  // منوها
   function sendMainMenu(ctx) {
     ctx.reply(
       "منوی اصلی:",
