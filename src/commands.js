@@ -123,7 +123,15 @@ function attachCommands(bot) {
   bot.hears("🔢 تبدیل پیشرفته", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
-    sendConversionMenu(ctx); // منوی جدید تبدیل پیشرفته
+    ctx.reply(
+      "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
+        "مثال: `2 bitcoin` یا `5000 not`\n" +
+        "فرمت: `تعداد ارز`",
+      {
+        parse_mode: "Markdown",
+        reply_markup: Markup.keyboard(["↩️ بازگشت"]).resize().oneTime(),
+      }
+    );
   });
 
   bot.hears("🔔 هشدار قیمتی", async (ctx) => {
@@ -268,7 +276,7 @@ function attachCommands(bot) {
     }
   });
 
-  bot.hears("↩️ بازگشت به منو اصلی", (ctx) => sendMainMenu(ctx));
+  bot.hears("↩️ بازگشت", (ctx) => sendMainMenu(ctx));
 
   bot.hears("📜 لیست هشدارها", async (ctx) => {
     const userId = ctx.from.id;
@@ -546,13 +554,33 @@ function attachCommands(bot) {
       if (!amountStr || !coin) {
         return ctx.reply(
           "❌ فرمت اشتباه!\n" + "مثال: `2 bitcoin` یا `5000 not`",
-          { parse_mode: "Markdown" }
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
+                  Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
+                ],
+              ],
+            },
+          }
         );
       }
 
       const amount = parseFloat(amountStr);
       if (isNaN(amount)) {
-        return ctx.reply("❌ مقدار باید عدد باشد! مثال: `2 bitcoin`");
+        return ctx.reply("❌ مقدار باید عدد باشد! مثال: `2 bitcoin`", {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
+                Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
+              ],
+            ],
+          },
+        });
       }
 
       try {
@@ -589,7 +617,7 @@ function attachCommands(bot) {
         message += `📅 **تاریخ و ساعت:** ${now}`;
 
         ctx.reply(message, { parse_mode: "Markdown" });
-        sendConversionMenu(ctx); // برگشت به منوی تبدیل
+        sendMainMenu(ctx);
       } catch (error) {
         await ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.", {
           parse_mode: "Markdown",
@@ -613,7 +641,10 @@ function attachCommands(bot) {
       "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
         "مثال: `2 bitcoin` یا `5000 not`\n" +
         "فرمت: `تعداد ارز`",
-      { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
+      {
+        parse_mode: "Markdown",
+        reply_markup: Markup.keyboard(["↩️ بازگشت"]).resize().oneTime(),
+      }
     );
     ctx.answerCbQuery();
   });
@@ -687,16 +718,6 @@ function attachCommands(bot) {
       Markup.keyboard([
         ["➕ اضافه کردن ارز جدید"],
         ["➖ حذف ارز از واچ‌لیست"],
-        ["↩️ بازگشت به منو اصلی"],
-      ]).resize()
-    );
-  }
-
-  function sendConversionMenu(ctx) {
-    ctx.reply(
-      "منوی تبدیل پیشرفته:",
-      Markup.keyboard([
-        ["🔢 تبدیل پیشرفته"],
         ["↩️ بازگشت به منو اصلی"],
       ]).resize()
     );
