@@ -123,12 +123,7 @@ function attachCommands(bot) {
   bot.hears("🔢 تبدیل پیشرفته", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
-    ctx.reply(
-      "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
-        "مثال: `2 bitcoin` یا `5000 not`\n" +
-        "فرمت: `تعداد ارز`",
-      { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
-    );
+    sendConversionMenu(ctx); // منوی جدید تبدیل پیشرفته
   });
 
   bot.hears("🔔 هشدار قیمتی", async (ctx) => {
@@ -145,10 +140,17 @@ function attachCommands(bot) {
       if (fearGreed) {
         const value = fearGreed.value;
         const classification = fearGreed.value_classification;
-        ctx.reply(
-          `😨 **شاخص ترس و طمع کریپتو**: ${value} (${classification})`,
-          { parse_mode: "Markdown" }
-        );
+
+        let message = "😨 **شاخص ترس و طمع کریپتو**\n\n";
+        message += "📖 **راهنما:**\n";
+        message += "- **0-24**: ترس شدید (فروش زیاد بازار)\n";
+        message += "- **25-44**: ترس (احتیاط در خرید)\n";
+        message += "- **45-55**: خنثی (بازار متعادل)\n";
+        message += "- **56-75**: طمع (تمایل به خرید)\n";
+        message += "- **76-100**: طمع شدید (احتمال حباب)\n\n";
+        message += `📊 **شاخص فعلی**: ${value} (${classification})`;
+
+        ctx.reply(message, { parse_mode: "Markdown" });
       } else {
         ctx.reply("😨 شاخص ترس و طمع: در دسترس نیست");
       }
@@ -556,7 +558,17 @@ function attachCommands(bot) {
       try {
         const coinCheck = await getCachedWatchlistData([coin.toLowerCase()]);
         if (coinCheck.length === 0) {
-          return ctx.reply("❌ ارز درخواستی یافت نشد!");
+          return ctx.reply("❌ ارز درخواستی یافت نشد!", {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
+                  Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
+                ],
+              ],
+            },
+          });
         }
 
         const coinPriceUsd = coinCheck[0].current_price;
@@ -577,19 +589,33 @@ function attachCommands(bot) {
         message += `📅 **تاریخ و ساعت:** ${now}`;
 
         ctx.reply(message, { parse_mode: "Markdown" });
-        sendMainMenu(ctx);
+        sendConversionMenu(ctx); // برگشت به منوی تبدیل
       } catch (error) {
         await ctx.reply("❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.", {
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
-              [Markup.button.callback("بازگشت به منوی اصلی", "back_to_main")],
+              [
+                Markup.button.callback("🔄 تلاش مجدد", "retry_conversion"),
+                Markup.button.callback("↩️ منوی اصلی", "back_to_main"),
+              ],
             ],
           },
         });
         console.error("Error in conversion:", error);
       }
     }
+  });
+
+  // اکشن‌های اینلاین
+  bot.action("retry_conversion", (ctx) => {
+    ctx.reply(
+      "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
+        "مثال: `2 bitcoin` یا `5000 not`\n" +
+        "فرمت: `تعداد ارز`",
+      { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
+    );
+    ctx.answerCbQuery();
   });
 
   bot.action("back_to_watchlist", (ctx) => {
@@ -607,6 +633,7 @@ function attachCommands(bot) {
     ctx.answerCbQuery();
   });
 
+  // منوها
   function sendMainMenu(ctx) {
     ctx.reply(
       "منوی اصلی:",
@@ -660,6 +687,16 @@ function attachCommands(bot) {
       Markup.keyboard([
         ["➕ اضافه کردن ارز جدید"],
         ["➖ حذف ارز از واچ‌لیست"],
+        ["↩️ بازگشت به منو اصلی"],
+      ]).resize()
+    );
+  }
+
+  function sendConversionMenu(ctx) {
+    ctx.reply(
+      "منوی تبدیل پیشرفته:",
+      Markup.keyboard([
+        ["🔢 تبدیل پیشرفته"],
         ["↩️ بازگشت به منو اصلی"],
       ]).resize()
     );
