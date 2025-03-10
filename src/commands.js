@@ -130,12 +130,9 @@ function attachCommands(bot) {
         "فرمت: `تعداد ارز`",
       {
         parse_mode: "Markdown",
-        reply_markup: {
-          force_reply: true,
-          inline_keyboard: [
-            [Markup.button.callback("لغو", "cancel_conversion")],
-          ],
-        },
+        reply_markup: Markup.forceReply().inlineKeyboard([
+          [Markup.button.callback("لغو", "cancel_conversion")],
+        ]),
       }
     );
   });
