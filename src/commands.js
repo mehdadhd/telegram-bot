@@ -128,12 +128,7 @@ function attachCommands(bot) {
         "یه تعداد ارزی بدید که ربات تبدیل به دلار کنه و با نرخ دلار اونو به تومان نشون بده\n" +
         "مثال: `2 bitcoin` یا `5000 not`\n" +
         "فرمت: `تعداد ارز`",
-      {
-        parse_mode: "Markdown",
-        reply_markup: Markup.forceReply().inlineKeyboard([
-          [Markup.button.callback("لغو", "cancel_conversion")],
-        ]),
-      }
+      { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
     );
   });
 
@@ -332,10 +327,7 @@ function attachCommands(bot) {
     ctx.reply(
       "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید\n(مثلاً bitcoin یا notcoin):",
       {
-        reply_markup: {
-          force_reply: true,
-          inline_keyboard: [[Markup.button.callback("لغو", "cancel_add_coin")]],
-        },
+        reply_markup: { force_reply: true },
       }
     )
   );
@@ -344,12 +336,7 @@ function attachCommands(bot) {
     ctx.reply(
       "لطفاً نماد یا نام ارزی که می‌خواهید حذف کنید را وارد کنید\n(مثلاً bitcoin یا notcoin):",
       {
-        reply_markup: {
-          force_reply: true,
-          inline_keyboard: [
-            [Markup.button.callback("لغو", "cancel_remove_coin")],
-          ],
-        },
+        reply_markup: { force_reply: true },
       }
     )
   );
@@ -636,22 +623,6 @@ function attachCommands(bot) {
         console.error("Error in conversion:", error);
       }
     }
-  });
-
-  // اکشن‌های دکمه‌های لغو
-  bot.action("cancel_add_coin", (ctx) => {
-    sendWatchlistMenu(ctx);
-    ctx.answerCbQuery();
-  });
-
-  bot.action("cancel_remove_coin", (ctx) => {
-    sendWatchlistMenu(ctx);
-    ctx.answerCbQuery();
-  });
-
-  bot.action("cancel_conversion", (ctx) => {
-    sendMainMenu(ctx);
-    ctx.answerCbQuery();
   });
 
   bot.action("back_to_watchlist", (ctx) => {
