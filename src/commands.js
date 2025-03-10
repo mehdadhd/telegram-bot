@@ -85,7 +85,7 @@ function attachCommands(bot) {
     }
   });
 
-  bot.hears("📊 واچ‌لیست قیمتی", async (ctx) => {
+  bot.hears("📊 مشاهده واچ‌لیست", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
     try {
@@ -128,7 +128,15 @@ function attachCommands(bot) {
         "یه تعداد ارزی بدید که ربات تبدیل به دلار کنه و با نرخ دلار اونو به تومان نشون بده\n" +
         "مثال: `2 bitcoin` یا `5000 not`\n" +
         "فرمت: `تعداد ارز`",
-      { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
+      {
+        parse_mode: "Markdown",
+        reply_markup: {
+          force_reply: true,
+          inline_keyboard: [
+            [Markup.button.callback("لغو", "cancel_conversion")],
+          ],
+        },
+      }
     );
   });
 
@@ -146,10 +154,17 @@ function attachCommands(bot) {
       if (fearGreed) {
         const value = fearGreed.value;
         const classification = fearGreed.value_classification;
-        ctx.reply(
-          `😨 **شاخص ترس و طمع کریپتو**: ${value} (${classification})`,
-          { parse_mode: "Markdown" }
-        );
+
+        let message = "😨 **شاخص ترس و طمع کریپتو**\n\n";
+        message += "📖 **راهنما:**\n";
+        message += "😱 **0-24**: ترس شدید (فروش زیاد بازار)\n";
+        message += "😨 **25-44**: ترس (احتیاط در خرید)\n";
+        message += "😐 **45-55**: خنثی (بازار متعادل)\n";
+        message += "😊 **56-75**: طمع (تمایل به خرید)\n";
+        message += "🤩 **76-100**: طمع شدید (احتمال حباب)\n\n";
+        message += `📊 **شاخص فعلی**: ${value} (${classification})`;
+
+        ctx.reply(message, { parse_mode: "Markdown" });
       } else {
         ctx.reply("😨 شاخص ترس و طمع: در دسترس نیست");
       }
@@ -320,7 +335,10 @@ function attachCommands(bot) {
     ctx.reply(
       "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید\n(مثلاً bitcoin یا notcoin):",
       {
-        reply_markup: { force_reply: true },
+        reply_markup: {
+          force_reply: true,
+          inline_keyboard: [[Markup.button.callback("لغو", "cancel_add_coin")]],
+        },
       }
     )
   );
@@ -329,7 +347,12 @@ function attachCommands(bot) {
     ctx.reply(
       "لطفاً نماد یا نام ارزی که می‌خواهید حذف کنید را وارد کنید\n(مثلاً bitcoin یا notcoin):",
       {
-        reply_markup: { force_reply: true },
+        reply_markup: {
+          force_reply: true,
+          inline_keyboard: [
+            [Markup.button.callback("لغو", "cancel_remove_coin")],
+          ],
+        },
       }
     )
   );
@@ -618,6 +641,22 @@ function attachCommands(bot) {
     }
   });
 
+  // اکشن‌های دکمه‌های لغو
+  bot.action("cancel_add_coin", (ctx) => {
+    sendWatchlistMenu(ctx);
+    ctx.answerCbQuery();
+  });
+
+  bot.action("cancel_remove_coin", (ctx) => {
+    sendWatchlistMenu(ctx);
+    ctx.answerCbQuery();
+  });
+
+  bot.action("cancel_conversion", (ctx) => {
+    sendMainMenu(ctx);
+    ctx.answerCbQuery();
+  });
+
   bot.action("back_to_watchlist", (ctx) => {
     sendWatchlistMenu(ctx);
     ctx.answerCbQuery();
@@ -638,7 +677,7 @@ function attachCommands(bot) {
       "منوی اصلی:",
       Markup.keyboard([
         ["🌍 نمای کلی بازار"],
-        ["📊 واچ‌لیست قیمتی"],
+        ["📊 مشاهده واچ‌لیست"],
         ["🔔 هشدار قیمتی"],
         ["💰 بازار ارز و طلا"],
         ["🔢 تبدیل پیشرفته"],
