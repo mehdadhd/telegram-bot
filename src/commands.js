@@ -16,6 +16,25 @@ const {
   getDollarPrice,
 } = require("./api");
 
+// کش کوتاه‌مدت برای واچ‌لیست
+let priceCache = {};
+let lastFetchTime = {};
+
+async function getCachedWatchlistData(coins) {
+  const coinList = coins.join(",");
+  const now = Date.now();
+  if (
+    priceCache[coinList] &&
+    now - lastFetchTime[coinList] < 10000 // 10 ثانیه
+  ) {
+    return priceCache[coinList];
+  }
+  const data = await getWatchlistData(coins);
+  priceCache[coinList] = data;
+  lastFetchTime[coinList] = now;
+  return data;
+}
+
 function attachCommands(bot) {
   bot.start(async (ctx) => {
     const userId = ctx.from.id;
@@ -73,7 +92,7 @@ function attachCommands(bot) {
       if (!global.userWatchlists[userId])
         global.userWatchlists[userId] = [...BASE_COINS];
       const userCoins = global.userWatchlists[userId];
-      const watchlistData = await getWatchlistData(userCoins);
+      const watchlistData = await getCachedWatchlistData(userCoins);
       const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd");
       const message = `${formatWatchlist(
         watchlistData
@@ -334,7 +353,7 @@ function attachCommands(bot) {
     ) {
       const newCoin = text.toLowerCase().trim();
       try {
-        const coinCheck = await getWatchlistData([newCoin]);
+        const coinCheck = await getCachedWatchlistData([newCoin]);
         if (coinCheck.length > 0) {
           if (!global.userWatchlists[userId])
             global.userWatchlists[userId] = [...BASE_COINS];
@@ -342,7 +361,7 @@ function attachCommands(bot) {
             global.userWatchlists[userId].push(newCoin);
             ctx.reply(`✅ ارز ${coinCheck[0].name} به واچ‌لیست شما اضافه شد.`);
 
-            const watchlistData = await getWatchlistData(
+            const watchlistData = await getCachedWatchlistData(
               global.userWatchlists[userId]
             );
             const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd");
@@ -414,7 +433,7 @@ function attachCommands(bot) {
           );
           ctx.reply(`✅ ارز ${coinToRemove} از واچ‌لیست شما حذف شد.`);
 
-          const watchlistData = await getWatchlistData(
+          const watchlistData = await getCachedWatchlistData(
             global.userWatchlists[userId]
           );
           const now = moment().format("jYYYY/jMM/jDD - HH:mm - dddd");
@@ -494,7 +513,7 @@ function attachCommands(bot) {
 
       try {
         console.log("Fetching coin data for:", coin);
-        const coinCheck = await getWatchlistData([coin.toLowerCase()]);
+        const coinCheck = await getCachedWatchlistData([coin.toLowerCase()]);
         if (coinCheck.length === 0) {
           console.log("Coin not found:", coin);
           return ctx.reply("❌ ارز درخواستی یافت نشد!");
@@ -558,7 +577,7 @@ function attachCommands(bot) {
 
       try {
         console.log("Fetching coin data for:", coin);
-        const coinCheck = await getWatchlistData([coin.toLowerCase()]);
+        const coinCheck = await getCachedWatchlistData([coin.toLowerCase()]);
         if (coinCheck.length === 0) {
           console.log("Coin not found:", coin);
           return ctx.reply("❌ ارز درخواستی یافت نشد!");
