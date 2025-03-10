@@ -127,7 +127,8 @@ function attachCommands(bot) {
       "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
         "یه تعداد ارزی بدید که ربات تبدیل به دلار کنه و با نرخ دلار اونو به تومان نشون بده\n" +
         "مثال: `2 bitcoin` یا `5000 not`\n" +
-        "فرمت: `تعداد ارز`",
+        "فرمت: `تعداد ارز`\n" +
+        "برای لغو، `/cancel` رو بفرستید.",
       { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
     );
   });
@@ -325,7 +326,9 @@ function attachCommands(bot) {
 
   bot.hears("➕ اضافه کردن ارز جدید", (ctx) =>
     ctx.reply(
-      "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید\n(مثلاً bitcoin یا notcoin):",
+      "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید\n" +
+        "(مثلاً bitcoin یا notcoin):\n" +
+        "برای لغو، `/cancel` رو بفرستید.",
       {
         reply_markup: { force_reply: true },
       }
@@ -334,7 +337,9 @@ function attachCommands(bot) {
 
   bot.hears("➖ حذف ارز از واچ‌لیست", (ctx) =>
     ctx.reply(
-      "لطفاً نماد یا نام ارزی که می‌خواهید حذف کنید را وارد کنید\n(مثلاً bitcoin یا notcoin):",
+      "لطفاً نماد یا نام ارزی که می‌خواهید حذف کنید را وارد کنید\n" +
+        "(مثلاً bitcoin یا notcoin):\n" +
+        "برای لغو، `/cancel` رو بفرستید.",
       {
         reply_markup: { force_reply: true },
       }
@@ -354,9 +359,36 @@ function attachCommands(bot) {
       ctx.message.reply_to_message.text
     );
 
+    // لغو عملیات‌ها
+    if (text === "/cancel") {
+      if (
+        ctx.message.reply_to_message.text ===
+        "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید\n(مثلاً bitcoin یا notcoin):\nبرای لغو، `/cancel` رو بفرستید."
+      ) {
+        ctx.reply("✅ عملیات لغو شد.");
+        sendWatchlistMenu(ctx);
+        return;
+      } else if (
+        ctx.message.reply_to_message.text ===
+        "لطفاً نماد یا نام ارزی که می‌خواهید حذف کنید را وارد کنید\n(مثلاً bitcoin یا notcoin):\nبرای لغو، `/cancel` رو بفرستید."
+      ) {
+        ctx.reply("✅ عملیات لغو شد.");
+        sendWatchlistMenu(ctx);
+        return;
+      } else if (
+        ctx.message.reply_to_message.text.startsWith(
+          "لطفاً تعداد واحد و ارز را وارد کنید"
+        )
+      ) {
+        ctx.reply("✅ عملیات لغو شد.");
+        sendMainMenu(ctx);
+        return;
+      }
+    }
+
     if (
       ctx.message.reply_to_message.text ===
-      "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید\n(مثلاً bitcoin یا notcoin):"
+      "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید\n(مثلاً bitcoin یا notcoin):\nبرای لغو، `/cancel` رو بفرستید."
     ) {
       const newCoin = text.toLowerCase().trim();
       try {
@@ -427,7 +459,7 @@ function attachCommands(bot) {
       }
     } else if (
       ctx.message.reply_to_message.text ===
-      "لطفاً نماد یا نام ارزی که می‌خواهید حذف کنید را وارد کنید\n(مثلاً bitcoin یا notcoin):"
+      "لطفاً نماد یا نام ارزی که می‌خواهید حذف کنید را وارد کنید\n(مثلاً bitcoin یا notcoin):\nبرای لغو، `/cancel` رو بفرستید."
     ) {
       const coinToRemove = text.toLowerCase().trim();
       try {
