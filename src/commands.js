@@ -55,6 +55,32 @@ function attachCommands(bot) {
     sendMainMenu(ctx);
   });
 
+  // اکشن بررسی عضویت
+  bot.action("check_membership", async (ctx) => {
+    const userId = ctx.from.id;
+    if (await isUserMember(userId, ctx)) {
+      // حذف پیام قبلی
+      await ctx.deleteMessage().catch((err) => {
+        console.error("Error deleting message:", err);
+      });
+      // ارسال پیام جدید با منوی اصلی
+      ctx.reply(
+        "✅ عضویت شما تأیید شد! لطفاً از منوی زیر استفاده کنید:",
+        Markup.keyboard([
+          ["🌍 نمای کلی بازار"],
+          ["📊 مشاهده واچ‌لیست"],
+          ["🔔 هشدار قیمتی"],
+          ["💰 بازار ارز و طلا"],
+          ["🔢 تبدیل پیشرفته"],
+        ]).resize()
+      );
+    } else {
+      ctx.answerCbQuery("❌ شما هنوز عضو کانال نشده‌اید!", {
+        show_alert: true,
+      });
+    }
+  });
+
   bot.hears("🌍 نمای کلی بازار", async (ctx) => {
     const userId = ctx.from.id;
     if (!(await isUserMember(userId, ctx))) return sendMembershipPrompt(ctx);
@@ -360,7 +386,7 @@ function attachCommands(bot) {
     );
 
     // لغو عملیات‌ها
-    if (text === "/cancel") {
+    if (text.toLowerCase() === "/cancel") {
       if (
         ctx.message.reply_to_message.text ===
         "لطفاً نماد یا نام ارز را به انگلیسی وارد کنید\n(مثلاً bitcoin یا notcoin):\nبرای لغو، `/cancel` رو بفرستید."
@@ -602,16 +628,27 @@ function attachCommands(bot) {
 
       if (!amountStr || !coin) {
         console.log("Invalid format detected");
-        return ctx.reply(
-          "❌ فرمت اشتباه!\n" + "مثال: `2 bitcoin` یا `5000 not`",
-          { parse_mode: "Markdown" }
-        );
+        return ctx.reply("❌ فرمت اشتباه!\nمثال: `2 bitcoin` یا `5000 not`", {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [Markup.button.callback("تلاش مجدد", "retry_conversion")],
+            ],
+          },
+        });
       }
 
       const amount = parseFloat(amountStr);
       if (isNaN(amount)) {
         console.log("Invalid amount detected");
-        return ctx.reply("❌ مقدار باید عدد باشد! مثال: `2 bitcoin`");
+        return ctx.reply("❌ مقدار باید عدد باشد!\nمثال: `2 bitcoin`", {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [Markup.button.callback("تلاش مجدد", "retry_conversion")],
+            ],
+          },
+        });
       }
 
       try {
@@ -619,7 +656,14 @@ function attachCommands(bot) {
         const coinCheck = await getCachedWatchlistData([coin.toLowerCase()]);
         if (coinCheck.length === 0) {
           console.log("Coin not found:", coin);
-          return ctx.reply("❌ ارز درخواستی یافت نشد!");
+          return ctx.reply("❌ ارز درخواستی یافت نشد!", {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [Markup.button.callback("تلاش مجدد", "retry_conversion")],
+              ],
+            },
+          });
         }
 
         const coinPriceUsd = coinCheck[0].current_price;
@@ -655,6 +699,19 @@ function attachCommands(bot) {
         console.error("Error in conversion:", error);
       }
     }
+  });
+
+  // اکشن دکمه‌ها
+  bot.action("retry_conversion", (ctx) => {
+    ctx.reply(
+      "لطفاً تعداد واحد و ارز را وارد کنید:\n" +
+        "یه تعداد ارزی بدید که ربات تبدیل به دلار کنه و با نرخ دلار اونو به تومان نشون بده\n" +
+        "مثال: `2 bitcoin` یا `5000 not`\n" +
+        "فرمت: `تعداد ارز`\n" +
+        "برای لغو، `/cancel` رو بفرستید.",
+      { reply_markup: { force_reply: true }, parse_mode: "Markdown" }
+    );
+    ctx.answerCbQuery();
   });
 
   bot.action("back_to_watchlist", (ctx) => {
